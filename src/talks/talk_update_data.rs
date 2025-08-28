@@ -1,0 +1,316 @@
+use std::sync::Arc;
+use bevy::asset::AssetServer;
+use bevy::color::palettes::basic::{BLACK, WHITE};
+use bevy::color::palettes::tailwind::GRAY_600;
+use bevy::picking::Pickable;
+use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, EventReader, EventWriter, FlexDirection, JustifyContent, JustifyText, LineBreak, Node, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, Trigger, UiRect, Val, With};
+use rand::random_range;
+use server_lib::{Data, DataType, DataTypeKind, RPSType};
+use crate::{BasicInfos, ButtonInfo, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
+use crate::talks::talk_struct::{Chat, EventButtonState, EventState, Token, UserList};
+
+#[derive(Event)]
+pub struct InputDataEvent(Data);
+
+
+
+pub(crate) fn update_data(
+    mut input_data_event: EventWriter<InputDataEvent>,
+    mut talk_mpsc: ResMut<TalkMpsc>,
+){
+    while let Ok(data) = talk_mpsc.1.try_recv(){
+        input_data_event.write(InputDataEvent(data));
+    }
+}
+
+pub(crate) fn name_event(
+    mut event: EventReader<InputDataEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    basic_infos: Res<BasicInfos>,
+    mut res_user_list: ResMut<ResUserList>,
+    q_user_list: Query<(Entity,Option<&Children>),With<UserList>>,
+    q_chat: Query<Entity,With<Chat>>,
+){
+    for event in event.read(){
+        if let DataTypeKind::Name = event.0.type_kind{
+
+            let data = event.0.clone();
+
+            let base_node = Node {
+                row_gap: Val::Px(5.0),
+                margin: UiRect::all(Val::Px(10.0)),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            };
+
+            let base_font = TextFont {
+                font: asset_server.load(Font::Bold.get()),
+                font_size: 20.0,
+                ..default()
+            };
+            let (user_list,_) = q_user_list.single().unwrap();
+            let mut userlist = commands.get_entity(user_list).unwrap();
+            if let DataType::Name(name) = data.inform {
+                let name = format!("{}",&name);
+                let token = format!("{}",&data.token.unwrap());
+                userlist.with_children(|p| {
+                    p.spawn((
+                        base_node,
+                        Token(token.clone())
+                    )).with_children(|p| {
+                        p.spawn((
+                            Text::new(name.clone()),
+                            base_font.clone(),
+                            TextColor(BLACK.into()),
+                        ));
+
+                        if basic_infos.token != token {
+                            p.spawn((
+                                Button,
+                                ButtonInfo(true),
+                                Node {
+                                    width: Val::Px(30.0),
+                                    height: Val::Px(30.0),
+                                    position_type: PositionType::Absolute,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    right: Val::ZERO,
+                                    ..default()
+                                },
+                                BorderRadius::all(Val::Px(10.0)),
+                                BackgroundColor(WHITE.into()),
+                                Token(token.clone()),
+                            )).observe(|trigger: Trigger<Pointer<Click>>, info: Query<&ButtonInfo>| {
+                                if let Ok(b) = info.get(trigger.target){
+                                    println!("B: {:?}",b.0);
+                                }
+                            }).with_child((
+                                Text::new("V"),
+                                TextFont {
+                                    font: asset_server.load(Font::Bold.get()),
+                                    ..default()
+                                },
+                                TextColor(BLACK.into()),
+                                Token(token.clone()),
+                                Pickable {
+                                    should_block_lower: false,
+                                    is_hoverable: false
+                                }
+                            )).observe(|
+                                trigger: Trigger<Pointer<Click>>,
+                                base: Res<BasicInfos>,
+                                q_token: Query<&Token>,
+                                state: Res<EventButtonState>,
+                                write_mpsc: Res<WriteMpsc>
+                            | {
+                                if let Ok(token) = q_token.get(trigger.target){
+                                    let tx = write_mpsc.0.clone();
+                                    match state.0 {
+                                        EventState::RPS => {
+                                            let id: Vec<u8> = (0..3).map(|_| random_range(1..=255) ).collect();
+                                            let _ = tx.send(Data {
+                                                token: Some(Arc::new(base.token.clone())),
+                                                type_kind: DataTypeKind::RPS,
+                                                inform: DataType::RPS(RPSType::Send(id,Arc::new(token.0.clone())))
+                                            });
+                                        }
+                                        EventState::OFF => {
+
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                    });
+                });
+                res_user_list.0.insert(token,name.clone());
+
+                let chat = q_chat.single().unwrap();
+                let mut chat = commands.get_entity(chat).unwrap();
+                let msg = format!("--- Join {} ---",name);
+                chat.with_child((
+                    Text::new(msg),
+                    base_font,
+                    TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                    TextColor(GRAY_600.into())
+                ));
+
+            }
+        }
+    }
+}
+
+pub(crate) fn remove_event(
+    mut event: EventReader<InputDataEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut res_user_list: ResMut<ResUserList>,
+    q_user_list: Query<(Entity,Option<&Children>),With<UserList>>,
+    q_token: Query<&Token>,
+    q_chat: Query<Entity,With<Chat>>,
+){
+    for event in event.read(){
+        if let DataTypeKind::Remove = event.0.type_kind{
+            let data = event.0.clone();
+            let token = format!("{}",&data.token.unwrap());
+            let name = format!("{}",&res_user_list.0[&token]);
+            println!("Out: {}",token);
+
+            let base_font = TextFont {
+                font: asset_server.load(Font::Bold.get()),
+                font_size: 20.0,
+                ..default()
+            };
+
+            let (_,children) = q_user_list.single().unwrap();
+            if let Some(children) = children {
+                for child in children{
+                    let child_token = q_token.get(child.clone()).unwrap();
+                    if child_token.0 == token{
+                        commands.get_entity(child.clone()).unwrap().despawn();
+                    }
+                }
+            }
+
+            let chat = q_chat.single().unwrap();
+            let mut chat = commands.get_entity(chat).unwrap();
+            let msg = format!("--- Leave {} ---",name);
+            chat.with_child((
+                Text::new(msg),
+                base_font,
+                TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                TextColor(GRAY_600.into())
+            ));
+        }
+    }
+}
+
+pub(crate) fn message_event(
+    mut event: EventReader<InputDataEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    basic_infos: Res<BasicInfos>,
+    mut res_user_list: ResMut<ResUserList>,
+    mut is_send_text: ResMut<IsSendText>,
+    q_chat: Query<Entity,With<Chat>>,
+){
+    for event in event.read(){
+        if let DataTypeKind::Message = event.0.type_kind{
+            let data = event.0.clone();
+            println!("Msg: {:?}",data.inform);
+
+            let base_node = Node {
+                row_gap: Val::Px(5.0),
+                margin: UiRect::all(Val::Px(10.0)),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            };
+
+            let base_font = TextFont {
+                font: asset_server.load(Font::Bold.get()),
+                font_size: 20.0,
+                ..default()
+            };
+
+            let chat = q_chat.single().unwrap();
+            let mut chat = commands.get_entity(chat).unwrap();
+
+            if let DataType::Message(msg) = data.inform {
+                let token = format!("{}",&data.token.unwrap());
+                let name = res_user_list.0[&token].clone();
+                let msg = format!("<{}>\n{}",&name,&msg);
+                chat.with_children(|p| {
+                    p.spawn(base_node).with_child((
+                        Text::new(msg),
+                        TextLayout::new(JustifyText::Left,LineBreak::WordOrCharacter),
+                        base_font,
+                        TextColor(BLACK.into())
+                    ));
+                });
+
+                if token == basic_infos.token {
+                    is_send_text.0 = true;
+                }
+            }
+        }
+    }
+}
+
+pub(crate) fn rps_event(
+    mut event: EventReader<InputDataEvent>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    res_user_list: Res<ResUserList>,
+    q_chat: Query<Entity,With<Chat>>,
+){
+    for event in event.read(){
+        if let DataTypeKind::RPS = event.0.type_kind{
+            let data = event.0.clone();
+            if let DataType::RPS(rps) = data.inform{
+                match rps {
+                    RPSType::Send(_, token) => {
+                        let send_token = format!("{}",data.token.unwrap());
+                        let send_name = format!("{}",&res_user_list.0[&send_token]);
+
+                        let accept_token = format!("{}",token);
+                        let accept_name = format!("{}",&res_user_list.0[&accept_token]);
+
+                        let chat = q_chat.single().unwrap();
+                        let mut chat = commands.get_entity(chat).unwrap();
+
+                        let base_node = Node {
+                            row_gap: Val::Px(5.0),
+                            margin: UiRect::all(Val::Px(10.0)),
+                            flex_direction: FlexDirection::Column,
+                            ..default()
+                        };
+
+                        let base_font = TextFont {
+                            font: asset_server.load(Font::Bold.get()),
+                            font_size: 20.0,
+                            ..default()
+                        };
+
+                        chat.with_children(|p| {
+                            p.spawn(base_node).with_children(|p| {
+                                p.spawn((
+                                    Text::new(send_name.clone()),
+                                    TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                                    base_font.clone(),
+                                    TextColor(BLACK.into())
+                                )).with_children(|p| {
+                                    p.spawn((
+                                        TextSpan::new(" asked "),
+                                        base_font.clone(),
+                                        TextColor(GRAY_600.into())
+                                    ));
+
+                                    p.spawn((
+                                        TextSpan::new(accept_name.clone()),
+                                        base_font.clone(),
+                                        TextColor(BLACK.into())
+                                    ));
+
+                                    p.spawn((
+                                        TextSpan::new(" to play rock-paper-scissors."),
+                                        base_font.clone(),
+                                        TextColor(GRAY_600.into())
+                                    ));
+
+                                });
+                            });
+                        });
+                    }
+                    RPSType::Accept(_, _) => {}
+                    RPSType::Rock(_) => {}
+                    RPSType::Paper(_) => {}
+                    RPSType::Scissor(_) => {}
+                }
+            }
+        }
+    }
+}
+
+
