@@ -4,7 +4,9 @@ use crate::{click_textfield, despawn_screen, BasicInfos, Font, JoinResultReceive
 use bevy::app::App;
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
-use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, IntoScheduleConfigs, JustifyContent, Node, OnEnter, OnExit, Overflow, Pointer, Query, Res, Text, TextColor, TextFont, Trigger, Update, Val, With};
+use bevy::color::Color;
+use bevy::picking::Pickable;
+use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, Interaction, IntoScheduleConfigs, JustifyContent, Node, OnEnter, OnExit, Overflow, Pointer, Query, Res, Single, Text, TextColor, TextFont, Trigger, Update, Val, With};
 use bevy::tasks::IoTaskPool;
 use bevy::text::TextLayoutInfo;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
@@ -14,6 +16,7 @@ pub fn join_plugin(app: &mut App){
     app.add_systems(OnEnter(MainState::Join), setup)
         .add_systems(Update,text_fixed.run_if(in_state(MainState::Join)))
         .add_systems(Update,join_after.run_if(in_state(MainState::Join)))
+        .add_systems(Update,check_system.run_if(in_state(MainState::Join)))
         .add_systems(OnExit(MainState::Join),despawn_screen::<OnJoinState>);
 }
 
@@ -22,6 +25,12 @@ struct OnJoinState;
 
 #[derive(Component)]
 struct HasTextField;
+
+#[derive(Component)]
+struct CheckText;
+
+#[derive(Component)]
+struct CheckTextNode;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
 
@@ -69,6 +78,66 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 ..default()
             }
         )).observe(click_textfield);
+
+        parent.spawn(
+            Node {
+                column_gap: Val::Px(10.0),
+                ..default()
+            }
+        ).with_children(|p| {
+            p.spawn((
+                CheckTextNode,
+                Interaction::None,
+                Node {
+                    width: Val::Px(20.0),
+                    height: Val::Px(20.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    overflow: Overflow::hidden(),
+                    ..default()
+                },
+                BackgroundColor(WHITE.into()),
+                BorderRadius::all(Val::Px(2.0))
+            )).with_child((
+                CheckText,
+                Text::new("•"),
+                TextFont {
+                    font: asset_server.load(Font::Bold.get()),
+                    font_size: 30.0,
+                    ..default()
+                },
+                TextColor(Color::NONE),
+                Pickable {
+                    should_block_lower: false,
+                    is_hoverable: false
+                }
+            )).observe(|_: Trigger<Pointer<Click>>, 
+                        mut style : Query<&mut TextFieldStyle>, 
+                        mut color: Single<&mut TextColor,With<CheckText>>
+            | {
+                    if let Ok(mut style) = style.single_mut(){
+                        style.password_style = !style.password_style;
+                        
+                        if style.password_style {
+                            color.0 = BLACK.into();
+                        }
+                        else { 
+                            color.0 = Color::NONE;
+                        }
+                    }
+                }
+            );
+
+            p.spawn((
+                Text::new("Hidden"),
+                TextFont {
+                    font: asset_server.load(Font::Medium.get()),
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(BLACK.into())
+            ));
+        });
 
         parent.spawn((
             Button,
@@ -123,6 +192,30 @@ fn text_fixed(text: Query<&TextLayoutInfo,Changed<TextField>>, mut node: Query<&
         if let Ok(mut node) = node.single_mut(){
             node.justify_content = if layout.size.x > 540.0 { JustifyContent::End }
             else { JustifyContent::Center };
+        }
+    }
+}
+
+fn check_system(
+    mut q_interaction: Query<
+        (
+            &Interaction,
+            &mut BackgroundColor,
+        ),
+        (Changed<Interaction>, With<CheckTextNode>)
+    >
+) {
+    for (interaction, mut bg) in &mut q_interaction{
+        match interaction {
+            Interaction::Pressed => {
+                bg.0 = BLACK.into();
+            }
+            Interaction::Hovered => {
+                bg.0 = BLACK.into();
+            }
+            Interaction::None => {
+                bg.0 = WHITE.into();
+            }
         }
     }
 }

@@ -1,29 +1,28 @@
 use crate::talks::modal::ModalState;
 use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OnTalkState, RightNode, TextNode, UserList};
 use crate::talks::talk_update_data::{message_event, name_event, remove_event, rps_event, update_data};
-use crate::{despawn_screen, BasicInfos, Font, IsSendText, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
+use crate::{despawn_screen, BasicInfos, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::css::{BLACK, WHITE};
 use bevy::color::palettes::tailwind::BLUE_200;
 use bevy::input::ButtonInput;
-use bevy::prelude::{in_state, BorderRadius, Button, Changed, Click, Commands, DetectChanges, Display, FlexDirection, IntoScheduleConfigs, JustifyText, KeyCode, LineBreak, Name, NextState, OnEnter, OnExit, Pointer, PositionType, Query, Res, ResMut, Single, State, Text, Transform, Trigger, With};
+use bevy::prelude::{in_state, BorderRadius, Button, Children, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Single, Spawn, SpawnRelated, State, Text, Transform, With};
 use bevy::text::{TextColor, TextFont, TextLayout};
 use bevy::ui::{AlignItems, BackgroundColor, ComputedNode, JustifyContent, Node, UiRect, Val};
 use bevy::utils::default;
 use bevy_bc_ime_text_field::event::EnterEvent;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 use bevy_bc_ime_text_field::text_field_style::TextFieldStyle;
-use bevy_simple_scroll_view::{ScrollView, ScrollableContent};
 use server_lib::{tokio_spawn, Data, DataType, DataTypeKind};
 use std::sync::Arc;
+use bevy::color::palettes::basic::{BLUE, RED};
 
 pub fn talk_plugin(app: &mut App){
     app.add_systems(OnEnter(TalkState::Display), (setup, get_data))
         .add_systems(Update,update_data.run_if(in_state(TalkState::Display)))
         .add_systems(Update,change_chat.run_if(in_state(TalkState::Display)))
         .add_systems(Update,change_display.run_if(in_state(TalkState::Display)))
-        .add_systems(Update,scroll_bottom.run_if(in_state(TalkState::Display)))
         .add_systems(Update,on_modal.run_if(in_state(TalkState::Display)))
         .add_systems(Update,name_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,remove_event .run_if(in_state(TalkState::Display)))
@@ -62,15 +61,21 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                 Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0 - 7.5),
+                    overflow: Overflow::hidden(),
                     padding: UiRect::all(Val::Px(10.0)),
                     ..default()
                 },
                 BackgroundColor(WHITE.into()),
                 BorderRadius::all(Val::Px(15.0)),
-                ScrollView {scroll_speed: 3600.0},
             )).with_children(|parent| {
                 parent.spawn((
-                    ScrollableContent::default(),
+                    Node {
+                        width: Val::Percent(100.0),
+                        max_height: Val::Percent(100.0),
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    },
+                    InheritedVisibility::default(),
                     UserList
                 ));
             });
@@ -119,7 +124,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     },
                     TextColor(BLACK.into())
                 )).observe(|
-                    _: Trigger<Pointer<Click>>,
+                    _: On<Pointer<Click>>,
                     mut q_text: Query<&mut Text,With<EventStateChangeButton>>,
                     mut info: ResMut<EventButtonState>
                 | {
@@ -151,16 +156,20 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
             p.spawn((
                 Node {
                     width: Val::Percent(100.0),
+                    overflow: Overflow::hidden(),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::End,
                     ..default()
                 },
-                //BackgroundColor(RED.into()),
-                ScrollView {scroll_speed: 3600.0},
+                //BackgroundColor( RED.into()),
                 ChatParent
             )).with_child((
-                ScrollableContent::default(),
-                Chat
+                Node {
+                    width: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                Chat,
             ));
 
             p.spawn((
@@ -178,7 +187,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
             )).with_children(|p| {
                 p.spawn((
                     TextField::default(),
-                    TextLayout::new(JustifyText::Left,LineBreak::WordOrCharacter),
+                    TextLayout::new(Justify::Left,LineBreak::WordOrCharacter),
                     TextFieldInfo {
                         max_length: Some(350),
                         placeholder: Some("Hello World!".to_string()),
@@ -195,7 +204,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     },
                     ChatField
                 )).observe(|
-                    trigger: Trigger<EnterEvent>,
+                    trigger: On<EnterEvent>,
                     mut q_field: Query<&mut TextField>,
                     write_mpsc: Res<WriteMpsc>,
                     basic_infos: Res<BasicInfos>
@@ -224,7 +233,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
 fn change_chat(
     q_text: Query<&ComputedNode,With<TextNode>>,
     q_right: Query<&ComputedNode,With<RightNode>>,
-    mut q_chat: Query<&mut Node,With<ChatParent>>
+    mut q_chat: Query<&mut Node,With<ChatParent>>,
 ){
     let text = q_text.single().unwrap();
     let right = q_right.single().unwrap();
@@ -233,6 +242,7 @@ fn change_chat(
 
     let mut chat = q_chat.single_mut().unwrap();
     chat.max_height = Val::Px(height);
+
 }
 
 fn change_display(state: Res<State<MainState>>,mut main_node: Single<&mut Node,With<MainNode>>,mut field: Single<&mut TextFieldInfo,With<ChatField>>){
@@ -241,15 +251,6 @@ fn change_display(state: Res<State<MainState>>,mut main_node: Single<&mut Node,W
         let state = state.get().clone();
         field.focus = state == MainState::None;
         main_node.display = if state == MainState::None {Display::DEFAULT} else { Display::None };
-    }
-}
-
-fn scroll_bottom(mut is_send_text: ResMut<IsSendText>, mut q_chat: Query<&mut ScrollableContent,(Changed<ScrollableContent>, With<Chat>)>){
-    if is_send_text.0 {
-        for mut chat in q_chat.iter_mut(){
-            chat.scroll_to_bottom();
-            is_send_text.0 = false;
-        }
     }
 }
 

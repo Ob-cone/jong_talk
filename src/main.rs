@@ -39,7 +39,6 @@ use bevy::{
 };
 use bevy_bc_ime_text_field::text_field::TextFieldInfo;
 use bevy_bc_ime_text_field::ImeTextFieldPlugin;
-use bevy_simple_scroll_view::ScrollViewPlugin;
 use local_ip_address::local_ip;
 use rand::distr::Alphanumeric;
 use rand::{rng, Rng};
@@ -81,10 +80,9 @@ async fn main() {
         .init_resource::<ResUserList>()
         .init_resource::<LastState>()
         .insert_resource(IsSendText(false))
-        .add_event::<InputDataEvent>()
+        .add_message::<InputDataEvent>()
         .add_systems(Startup,setup)
         .add_plugins(ImeTextFieldPlugin)
-        .add_plugins(ScrollViewPlugin)
         .add_plugins((main_plugin,host_plugin,join_plugin,talk_plugin,setting_plugin,modal_plugin))
         .add_systems(Update,button_system)
         .add_systems(Update,update_last_state)
@@ -284,7 +282,7 @@ fn button_system(
 }
 
 fn click_textfield(trigger: Trigger<Pointer<Click>>, mut child: Query<&Children>, mut field: Query<&mut TextFieldInfo>){
-    if let Ok(children) = child.get_mut(trigger.target){
+    if let Ok(children) = child.get_mut(trigger.entity){
         if let Ok(mut field) = field.get_mut(children[0]){
             field.focus = true;
         }

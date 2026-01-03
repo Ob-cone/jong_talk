@@ -4,9 +4,9 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::WHITE;
 use bevy::color::palettes::css::{BLACK, WHEAT};
 use bevy::color::{Color, Srgba};
-use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, EventWriter, FlexDirection, JustifyContent, NextState, Node, OnEnter, OnExit, Out, Over, Pointer, Pressed, Query, Released, Res, ResMut, States, Text, Trigger, Val};
+use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, EventWriter, FlexDirection, JustifyContent, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Press, Query, Release, Res, ResMut, States, Text, Trigger, Val};
 use bevy::text::{TextColor, TextFont};
-use bevy::ui::{UiRect, ZIndex};
+use bevy::ui::{Pressed, UiRect, ZIndex};
 
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -107,22 +107,22 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                     },
                     TextColor(Color::NONE),
                     ZIndex(999)
-                )).observe(|trigger: Trigger<Pointer<Over>>,mut color: Query<&mut BackgroundColor>| {
-                    if let Ok(mut color) = color.get_mut(trigger.target){
+                )).observe(|trigger: On<Pointer<Over>>,mut color: Query<&mut BackgroundColor>| {
+                    if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = BLACK.into()
                     }
-                }).observe(|trigger: Trigger<Pointer<Out>>,mut color: Query<&mut BackgroundColor>| {
-                    if let Ok(mut color) = color.get_mut(trigger.target){
+                }).observe(|trigger: On<Pointer<Out>>,mut color: Query<&mut BackgroundColor>| {
+                    if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = WHITE.into()
                     }
-                }).observe(|trigger: Trigger<Pointer<Pressed>>, mut color: Query<&mut TextColor>| {
+                }).observe(|trigger: On<Pointer<Press>>, mut color: Query<&mut TextColor>| {
 
-                    if let Ok(mut color) = color.get_mut(trigger.target){
+                    if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = WHITE.into();
                     }
-                }).observe(|trigger: Trigger<Pointer<Released>>, mut color: Query<&mut TextColor>| {
+                }).observe(|trigger: On<Pointer<Release>>, mut color: Query<&mut TextColor>| {
 
-                    if let Ok(mut color) = color.get_mut(trigger.target){
+                    if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = Color::NONE;
                     }
                 });

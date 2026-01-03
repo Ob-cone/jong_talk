@@ -1,11 +1,14 @@
 use crate::{despawn_screen, Font, LastState, MainState};
 use bevy::app::{App, AppExit};
 use bevy::color::palettes::css::{BLACK, WHITE};
+use bevy::color::palettes::tailwind::BLUE_100;
 use bevy::ecs::relationship::RelatedSpawnerCommands;
-use bevy::prelude::{AssetServer, Button, ChildOf, Click, Commands, Component, EventWriter, FlexDirection, NextState, OnEnter, OnExit, Out, Over, Pointer, PositionType, Query, Res, ResMut, Text, Trigger, UiRect};
-use bevy::text::{LineHeight, TextColor, TextFont};
+use bevy::prelude::{AssetServer, Button, ChildOf, Children, Click, Commands, Component, EventWriter, FlexDirection, NextState, OnEnter, OnExit, Out, Over, Pointer, PositionType, Query, Res, ResMut, Spawn, Text, Trigger, UiRect};
+use bevy::sprite::Text2d;
+use bevy::text::{LineHeight, TextColor, TextFont, TextSpan};
 use bevy::ui::{AlignItems, BackgroundColor, BorderRadius, JustifyContent, Node, Val};
 use bevy::utils::default;
+use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 
 pub fn main_plugin(app: &mut App){
     app.add_systems(OnEnter(MainState::MainHome), main_setup)
@@ -126,11 +129,11 @@ pub fn get_main_home_back_button(parent: &mut RelatedSpawnerCommands<ChildOf>,as
             },
             TextColor(BLACK.into())
         )).observe(|trigger:Trigger<Pointer<Over>>, mut text_color: Query<&mut TextColor>| {
-            if let Ok(mut color) = text_color.get_mut(trigger.target){
+            if let Ok(mut color) = text_color.get_mut(trigger.entity){
                 color.0 = WHITE.into();
             }
         }).observe(|trigger:Trigger<Pointer<Out>>, mut text_color: Query<&mut TextColor>| {
-            if let Ok(mut color) = text_color.get_mut(trigger.target){
+            if let Ok(mut color) = text_color.get_mut(trigger.entity){
                 color.0 = BLACK.into();
             }
         }).observe(|_:Trigger<Pointer<Click>>, mut state: ResMut<NextState<MainState>>, last_state: Res<LastState>| {

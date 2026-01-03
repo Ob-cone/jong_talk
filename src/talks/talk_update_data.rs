@@ -3,19 +3,21 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
 use bevy::color::palettes::tailwind::GRAY_600;
 use bevy::picking::Pickable;
-use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, EventReader, EventWriter, FlexDirection, JustifyContent, JustifyText, LineBreak, Node, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, Trigger, UiRect, Val, With};
+use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, FlexDirection, JustifyContent, LineBreak, Message, MessageReader, MessageWriter, Node, On, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, UiRect, Val, With};
+use bevy::text::Justify;
+use bevy::ui::percent;
 use rand::random_range;
 use server_lib::{Data, DataType, DataTypeKind, RPSType};
 use crate::{BasicInfos, ButtonInfo, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
 use crate::talks::talk_struct::{Chat, EventButtonState, EventState, Token, UserList};
 
-#[derive(Event)]
+#[derive(Event,Message)]
 pub struct InputDataEvent(Data);
 
 
 
 pub(crate) fn update_data(
-    mut input_data_event: EventWriter<InputDataEvent>,
+    mut input_data_event: MessageWriter<InputDataEvent>,
     mut talk_mpsc: ResMut<TalkMpsc>,
 ){
     while let Ok(data) = talk_mpsc.1.try_recv(){
@@ -24,7 +26,7 @@ pub(crate) fn update_data(
 }
 
 pub(crate) fn name_event(
-    mut event: EventReader<InputDataEvent>,
+    mut event: MessageReader<InputDataEvent>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     basic_infos: Res<BasicInfos>,
@@ -81,8 +83,8 @@ pub(crate) fn name_event(
                                 BorderRadius::all(Val::Px(10.0)),
                                 BackgroundColor(WHITE.into()),
                                 Token(token.clone()),
-                            )).observe(|trigger: Trigger<Pointer<Click>>, info: Query<&ButtonInfo>| {
-                                if let Ok(b) = info.get(trigger.target){
+                            )).observe(|trigger: On<Pointer<Click>>, info: Query<&ButtonInfo>| {
+                                if let Ok(b) = info.get(trigger.entity){
                                     println!("B: {:?}",b.0);
                                 }
                             }).with_child((
@@ -98,13 +100,13 @@ pub(crate) fn name_event(
                                     is_hoverable: false
                                 }
                             )).observe(|
-                                trigger: Trigger<Pointer<Click>>,
+                                trigger: On<Pointer<Click>>,
                                 base: Res<BasicInfos>,
                                 q_token: Query<&Token>,
                                 state: Res<EventButtonState>,
                                 write_mpsc: Res<WriteMpsc>
                             | {
-                                if let Ok(token) = q_token.get(trigger.target){
+                                if let Ok(token) = q_token.get(trigger.entity){
                                     let tx = write_mpsc.0.clone();
                                     match state.0 {
                                         EventState::RPS => {
@@ -133,7 +135,7 @@ pub(crate) fn name_event(
                 chat.with_child((
                     Text::new(msg),
                     base_font,
-                    TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                    TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
                     TextColor(GRAY_600.into())
                 ));
 
@@ -143,10 +145,10 @@ pub(crate) fn name_event(
 }
 
 pub(crate) fn remove_event(
-    mut event: EventReader<InputDataEvent>,
+    mut event: MessageReader<InputDataEvent>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut res_user_list: ResMut<ResUserList>,
+    res_user_list: ResMut<ResUserList>,
     q_user_list: Query<(Entity,Option<&Children>),With<UserList>>,
     q_token: Query<&Token>,
     q_chat: Query<Entity,With<Chat>>,
@@ -180,7 +182,7 @@ pub(crate) fn remove_event(
             chat.with_child((
                 Text::new(msg),
                 base_font,
-                TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
                 TextColor(GRAY_600.into())
             ));
         }
@@ -188,11 +190,11 @@ pub(crate) fn remove_event(
 }
 
 pub(crate) fn message_event(
-    mut event: EventReader<InputDataEvent>,
+    mut event: MessageReader<InputDataEvent>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     basic_infos: Res<BasicInfos>,
-    mut res_user_list: ResMut<ResUserList>,
+    res_user_list: ResMut<ResUserList>,
     mut is_send_text: ResMut<IsSendText>,
     q_chat: Query<Entity,With<Chat>>,
 ){
@@ -203,6 +205,7 @@ pub(crate) fn message_event(
 
             let base_node = Node {
                 row_gap: Val::Px(5.0),
+                width: percent(100),
                 margin: UiRect::all(Val::Px(10.0)),
                 flex_direction: FlexDirection::Column,
                 ..default()
@@ -224,12 +227,11 @@ pub(crate) fn message_event(
                 chat.with_children(|p| {
                     p.spawn(base_node).with_child((
                         Text::new(msg),
-                        TextLayout::new(JustifyText::Left,LineBreak::WordOrCharacter),
+                        TextLayout::new(Justify::Left,LineBreak::WordOrCharacter),
                         base_font,
                         TextColor(BLACK.into())
                     ));
                 });
-
                 if token == basic_infos.token {
                     is_send_text.0 = true;
                 }
@@ -239,7 +241,7 @@ pub(crate) fn message_event(
 }
 
 pub(crate) fn rps_event(
-    mut event: EventReader<InputDataEvent>,
+    mut event: MessageReader<InputDataEvent>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     res_user_list: Res<ResUserList>,
@@ -277,7 +279,7 @@ pub(crate) fn rps_event(
                             p.spawn(base_node).with_children(|p| {
                                 p.spawn((
                                     Text::new(send_name.clone()),
-                                    TextLayout::new(JustifyText::Center,LineBreak::WordOrCharacter),
+                                    TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
                                     base_font.clone(),
                                     TextColor(BLACK.into())
                                 )).with_children(|p| {
