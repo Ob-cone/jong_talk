@@ -1,4 +1,4 @@
-use crate::{despawn_screen, Font, LastState, MainState};
+use crate::{despawn_screen, Font, JoinResultReceiver, LastState, MainState, ResUserList, ServerResource};
 use bevy::app::{App, AppExit};
 use bevy::color::palettes::css::{BLACK, WHITE};
 use bevy::color::palettes::tailwind::BLUE_100;
@@ -9,9 +9,11 @@ use bevy::text::{LineHeight, TextColor, TextFont, TextSpan};
 use bevy::ui::{AlignItems, BackgroundColor, BorderRadius, JustifyContent, Node, Val};
 use bevy::utils::default;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
+use crate::talks::rps_game::{RpsList, RpsModalResource, RpsModalType, RpsTimer};
 
 pub fn main_plugin(app: &mut App){
     app.add_systems(OnEnter(MainState::MainHome), main_setup)
+        .add_systems(OnEnter(MainState::MainHome), reset_resource)
         .add_systems(OnExit(MainState::MainHome), despawn_screen::<OnMainState>);
 
 }
@@ -105,6 +107,20 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
         });
     });
 
+}
+
+fn reset_resource(
+    mut user_list: ResMut<ResUserList>,
+    mut rps_timer: ResMut<RpsTimer>,
+    mut rps_list: ResMut<RpsList>,
+    mut rps_modal_resource: ResMut<RpsModalResource>,
+    mut server_resource: ResMut<ServerResource>,
+){
+    user_list.0.clear();
+    *rps_timer = RpsTimer::None;
+    rps_list.0.clear();
+    rps_modal_resource.0 = RpsModalType::None;
+    *server_resource = ServerResource::default();
 }
 
 pub fn get_main_home_back_button(parent: &mut RelatedSpawnerCommands<ChildOf>,asset_server: AssetServer){

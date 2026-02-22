@@ -1,15 +1,16 @@
-use std::sync::Arc;
+use crate::talks::rps_game::{choice_to_string, RpsList, RpsModalResource, RpsModalType, RpsState};
+use crate::talks::talk_struct::{Chat, EventButtonState, EventState, Token, UserList};
+use crate::{BasicInfos, ButtonInfo, FailConnectMpsc, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
-use bevy::color::palettes::tailwind::GRAY_600;
+use bevy::color::palettes::tailwind::{GRAY_600, RED_500};
 use bevy::picking::Pickable;
-use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, FlexDirection, JustifyContent, LineBreak, Message, MessageReader, MessageWriter, Node, On, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, UiRect, Val, With};
+use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, FlexDirection, JustifyContent, LineBreak, Message, MessageReader, MessageWriter, NextState, Node, On, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, UiRect, Val, With};
 use bevy::text::Justify;
 use bevy::ui::percent;
-use rand::random_range;
 use server_lib::{Data, DataType, DataTypeKind, RPSType};
-use crate::{BasicInfos, ButtonInfo, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
-use crate::talks::talk_struct::{Chat, EventButtonState, EventState, Token, UserList};
+use std::sync::Arc;
+use system_shutdown::shutdown;
 
 #[derive(Event,Message)]
 pub struct InputDataEvent(Data);
@@ -22,6 +23,49 @@ pub(crate) fn update_data(
 ){
     while let Ok(data) = talk_mpsc.1.try_recv(){
         input_data_event.write(InputDataEvent(data));
+    }
+}
+
+
+pub(crate) fn fail_event(
+    mut commands: Commands,
+    mut fail_mpsc: ResMut<FailConnectMpsc>,
+    q_chat: Query<Entity,With<Chat>>,
+    asset_server: Res<AssetServer>,
+){
+    while let Ok(is_fail_connect) = fail_mpsc.1.try_recv(){
+        if is_fail_connect{
+            let chat = q_chat.single().unwrap();
+            let mut chat = commands.get_entity(chat).unwrap();
+            chat.with_child((
+                Text::new("--- Fail Connect! ---".to_string()),
+                TextFont {
+                    font: asset_server.load(Font::Bold.get()),
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
+                TextColor(RED_500.into())
+            ));
+        }
+    }
+}
+
+pub(crate) fn game_data_event(
+    mut event: MessageReader<InputDataEvent>,
+    mut res_rps_list: ResMut<RpsList>,
+){
+    for event in event.read(){
+        if let DataTypeKind::RPS = event.0.type_kind{
+            let data = event.0.clone();
+            if let DataType::RPS(rps) = data.inform{
+                if let RPSType::Data(v,token) = rps{
+                    let token1 = format!("{}",&data.token.unwrap());
+                    let token2 = format!("{}",&token);
+                    res_rps_list.0.insert(v,(token1,token2));
+                }
+            }
+        }
     }
 }
 
@@ -83,11 +127,7 @@ pub(crate) fn name_event(
                                 BorderRadius::all(Val::Px(10.0)),
                                 BackgroundColor(WHITE.into()),
                                 Token(token.clone()),
-                            )).observe(|trigger: On<Pointer<Click>>, info: Query<&ButtonInfo>| {
-                                if let Ok(b) = info.get(trigger.entity){
-                                    println!("B: {:?}",b.0);
-                                }
-                            }).with_child((
+                            )).with_child((
                                 Text::new("V"),
                                 TextFont {
                                     font: asset_server.load(Font::Bold.get()),
@@ -104,21 +144,23 @@ pub(crate) fn name_event(
                                 base: Res<BasicInfos>,
                                 q_token: Query<&Token>,
                                 state: Res<EventButtonState>,
-                                write_mpsc: Res<WriteMpsc>
+                                write_mpsc: Res<WriteMpsc>,
+                                mut next_rps_state: ResMut<NextState<RpsState>>,
+                                mut rpstype: ResMut<RpsModalResource>
                             | {
                                 if let Ok(token) = q_token.get(trigger.entity){
-                                    let tx = write_mpsc.0.clone();
                                     match state.0 {
                                         EventState::RPS => {
-                                            let id: Vec<u8> = (0..3).map(|_| random_range(1..=255) ).collect();
-                                            let _ = tx.send(Data {
-                                                token: Some(Arc::new(base.token.clone())),
-                                                type_kind: DataTypeKind::RPS,
-                                                inform: DataType::RPS(RPSType::Send(id,Arc::new(token.0.clone())))
-                                            });
+                                            *rpstype = RpsModalResource(RpsModalType::Send(token.0.clone()));
+                                            next_rps_state.set(RpsState::Display);
                                         }
                                         EventState::OFF => {
-
+                                            let tx = write_mpsc.0.clone();
+                                            let _ = tx.send(Data {
+                                                token: Some(Arc::new(base.token.clone())),
+                                                type_kind: DataTypeKind::IsOff,
+                                                inform: DataType::IsOff(Arc::new(token.0.clone()))
+                                            });
                                         }
                                     }
                                 }
@@ -245,14 +287,18 @@ pub(crate) fn rps_event(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     res_user_list: Res<ResUserList>,
+    mut res_rps_list: ResMut<RpsList>,
     q_chat: Query<Entity,With<Chat>>,
+    base: Res<BasicInfos>,
+    mut next_rps_state: ResMut<NextState<RpsState>>,
+    mut rpstype: ResMut<RpsModalResource>
 ){
     for event in event.read(){
         if let DataTypeKind::RPS = event.0.type_kind{
             let data = event.0.clone();
             if let DataType::RPS(rps) = data.inform{
                 match rps {
-                    RPSType::Send(_, token) => {
+                    RPSType::Send(id, token) => {
                         let send_token = format!("{}",data.token.unwrap());
                         let send_name = format!("{}",&res_user_list.0[&send_token]);
 
@@ -304,11 +350,191 @@ pub(crate) fn rps_event(
                                 });
                             });
                         });
+                        res_rps_list.0.insert(id.clone(),(send_token.clone(),accept_token.clone()));
+                        if base.token == accept_token {
+                            *rpstype = RpsModalResource(RpsModalType::Accept(id,send_name.clone()));
+                            next_rps_state.set(RpsState::Display);
+                        }
+
                     }
-                    RPSType::Accept(_, _) => {}
-                    RPSType::Rock(_) => {}
-                    RPSType::Paper(_) => {}
-                    RPSType::Scissor(_) => {}
+                    RPSType::Accept(id, isAccept) => {
+                        println!("RPS: {:?} Id: {:?}",res_rps_list.0,id);
+                        if let Some((send_token,accept_token)) = res_rps_list.0.get(&id){
+
+                            let send_name = format!("{}",&res_user_list.0[send_token]);
+                            let accept_name = format!("{}",&res_user_list.0[accept_token]);
+
+                            let chat = q_chat.single().unwrap();
+                            let mut chat = commands.get_entity(chat).unwrap();
+
+                            let base_node = Node {
+                                row_gap: Val::Px(5.0),
+                                margin: UiRect::all(Val::Px(10.0)),
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            };
+
+                            let base_font = TextFont {
+                                font: asset_server.load(Font::Bold.get()),
+                                font_size: 20.0,
+                                ..default()
+                            };
+
+                            chat.with_children(|p| {
+                                p.spawn(base_node).with_children(|p| {
+                                    p.spawn((
+                                        Text::new(accept_name.clone()),
+                                        TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
+                                        base_font.clone(),
+                                        TextColor(BLACK.into())
+                                    )).with_children(|p| {
+                                        p.spawn((
+                                            TextSpan::new(if isAccept {
+                                                " accepted "
+                                            } else { " declined " }),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(send_name.clone()),
+                                            base_font.clone(),
+                                            TextColor(BLACK.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new("'s game request."),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                    });
+                                });
+                            });
+                            if !isAccept{
+                                res_rps_list.0.remove(&id);
+                            }
+                        }
+                    }
+                    RPSType::Game(id) => {
+                        if let Some((send,accept)) = res_rps_list.0.get(&id){
+                            if (send == &base.token) || (accept == &base.token) {
+                                *rpstype = RpsModalResource(RpsModalType::Game(id));
+                                next_rps_state.set(RpsState::Display);
+                            }
+                        }
+                    }
+                    RPSType::Result(id,choice,win) => {
+                        println!("Id: {:?}, Choice:{:?},Win: {:?}",id,choice,win);
+                        if let Some((send_token,accept_token)) = res_rps_list.0.get(&id){
+                            let send_name = format!("{}",&res_user_list.0[send_token]);
+                            let accept_name = format!("{}",&res_user_list.0[accept_token]);
+
+                            let mut win_name = if win.to_string() == "None"{
+                                "None".to_string()
+                            }
+                            else {
+                                res_user_list.0[&win.to_string()].clone()
+                            };
+
+                            let chat = q_chat.single().unwrap();
+                            let mut chat = commands.get_entity(chat).unwrap();
+
+                            let base_node = Node {
+                                row_gap: Val::Px(5.0),
+                                margin: UiRect::all(Val::Px(10.0)),
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            };
+
+                            let base_font = TextFont {
+                                font: asset_server.load(Font::Bold.get()),
+                                font_size: 20.0,
+                                ..default()
+                            };
+
+                            chat.with_children(|p| {
+                                p.spawn(base_node).with_children(|p| {
+                                    p.spawn((
+                                        Text::new(send_name.clone()),
+                                        TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
+                                        base_font.clone(),
+                                        TextColor(BLACK.into())
+                                    )).with_children(|p| {
+                                        p.spawn((
+                                            TextSpan::new(": "),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(choice_to_string(choice[0])),
+                                            base_font.clone(),
+                                            TextColor(BLACK.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(" vs "),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(accept_name.clone()),
+                                            base_font.clone(),
+                                            TextColor(BLACK.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(": "),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(choice_to_string(choice[1])),
+                                            base_font.clone(),
+                                            TextColor(BLACK.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(" -> Win: "),
+                                            base_font.clone(),
+                                            TextColor(GRAY_600.into())
+                                        ));
+
+                                        p.spawn((
+                                            TextSpan::new(win_name),
+                                            base_font.clone(),
+                                            TextColor(BLACK.into())
+                                        ));
+
+                                    });
+                                });
+                            });
+
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
+pub fn off_event(
+    mut event: MessageReader<InputDataEvent>,
+    base: Res<BasicInfos>,
+){
+    for event in event.read(){
+        if event.0.type_kind == DataTypeKind::Off {
+            let data = event.0.clone();
+            if let DataType::Off(token) = data.inform{
+                if token.to_string() == base.token{
+                    match shutdown() {
+                        Ok(_) => println!("Shutting down..."),
+                        Err(error) => eprintln!("Failed to shut down: {}", error),
+                    }
                 }
             }
         }

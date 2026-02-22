@@ -10,6 +10,7 @@ opt-level = 1
 opt-level = 3
 
 
+
 [dependencies]
 bevy = { version = "0.17.2", features = ["dynamic_linking"] }
 server_lib = {path = "server_lib"}
@@ -18,3 +19,4 @@ bevy_bc_ime_text_field = {path = "../bevy_bc_ime_text_field"}
 local-ip-address = "0.6.5"
 toml = "0.9.2"
 rand = "0.9.2"
+system_shutdown = "4.1.0"

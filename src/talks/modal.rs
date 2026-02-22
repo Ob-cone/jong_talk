@@ -96,9 +96,6 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                 ));
                 p.spawn((
                     Node::default(),
-                    BackgroundColor(WHITE.into()),
-                    ZIndex(1000)
-                )).with_child((
                     Text::new(server.addr.clone()),
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
@@ -106,7 +103,8 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                         ..default()
                     },
                     TextColor(Color::NONE),
-                    ZIndex(999)
+                    BackgroundColor(WHITE.into()),
+                    ZIndex(1000)
                 )).observe(|trigger: On<Pointer<Over>>,mut color: Query<&mut BackgroundColor>| {
                     if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = BLACK.into()
@@ -116,12 +114,10 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                         color.0 = WHITE.into()
                     }
                 }).observe(|trigger: On<Pointer<Press>>, mut color: Query<&mut TextColor>| {
-
                     if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = WHITE.into();
                     }
                 }).observe(|trigger: On<Pointer<Release>>, mut color: Query<&mut TextColor>| {
-
                     if let Ok(mut color) = color.get_mut(trigger.entity){
                         color.0 = Color::NONE;
                     }
@@ -132,7 +128,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                 Text::new("Main"),
                 base_font.clone()
             )).observe(|
-                _: Trigger<Pointer<Click>>,
+                _: On<Pointer<Click>>,
                 mut next_state: ResMut<NextState<MainState>>,
                 mut next_modal_state: ResMut<NextState<ModalState>>,
                 mut next_talk_state: ResMut<NextState<TalkState>>,

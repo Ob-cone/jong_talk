@@ -1,6 +1,8 @@
+//#![windows_subsystem = "windows"]
 mod main_home;
 mod talks;
 mod setting;
+mod scroll;
 
 use crate::main_home::main_plugin;
 use crate::setting::setting_plugin;
@@ -51,6 +53,8 @@ use talks::modal::{modal_plugin, ModalState};
 use tokio::runtime::Runtime;
 use tokio::sync::{broadcast, mpsc};
 use toml::{Table, Value};
+use crate::scroll::scroll_plugin;
+use crate::talks::rps_game::{rps_plugin, RpsModalType, RpsModalResource, RpsList, RpsTimer};
 use crate::talks::talk_struct::{EventButtonState, EventState};
 use crate::talks::talk_update_data::InputDataEvent;
 
@@ -61,6 +65,7 @@ async fn main() {
 
     let (j_tx, j_rx) = mpsc::channel::<ServerResource>(1);
     let (t_tx, t_rx) = mpsc::channel::<Data>(100);
+    let (f_tx, f_rx) = mpsc::channel::<bool>(10);
     let (w_tx, _) = broadcast::channel::<Data>(100);
     let (s_tx, _) = broadcast::channel::<bool>(100);
 
@@ -74,16 +79,21 @@ async fn main() {
         .init_state::<TalkState>()
         .insert_resource(JoinResultReceiver(j_tx,j_rx))
         .insert_resource(TalkMpsc(t_tx,t_rx))
+        .insert_resource(FailConnectMpsc(f_tx,f_rx))
         .insert_resource(WriteMpsc(w_tx))
         .insert_resource(ServerOffBroadcast(s_tx))
         .insert_resource(EventButtonState(EventState::RPS))
         .init_resource::<ResUserList>()
         .init_resource::<LastState>()
         .insert_resource(IsSendText(false))
+        .insert_resource(RpsTimer::None)
+        .insert_resource(RpsModalResource(RpsModalType::None))
+        .insert_resource(RpsList(HashMap::<Vec<u8>,(String,String)>::new()))
         .add_message::<InputDataEvent>()
         .add_systems(Startup,setup)
         .add_plugins(ImeTextFieldPlugin)
-        .add_plugins((main_plugin,host_plugin,join_plugin,talk_plugin,setting_plugin,modal_plugin))
+        .add_plugins(scroll_plugin)
+        .add_plugins((main_plugin,host_plugin,join_plugin,talk_plugin,setting_plugin,modal_plugin,rps_plugin))
         .add_systems(Update,button_system)
         .add_systems(Update,update_last_state)
         .add_systems(Last,exit_program)
@@ -176,6 +186,9 @@ struct JoinResultReceiver(mpsc::Sender<ServerResource>,mpsc::Receiver<ServerReso
 
 #[derive(Resource)]
 struct TalkMpsc(mpsc::Sender<Data>,mpsc::Receiver<Data>);
+
+#[derive(Resource)]
+struct FailConnectMpsc(mpsc::Sender<bool>,mpsc::Receiver<bool>);
 
 #[derive(Resource)]
 struct WriteMpsc(broadcast::Sender<Data>);

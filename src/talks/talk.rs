@@ -1,13 +1,13 @@
 use crate::talks::modal::ModalState;
 use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OnTalkState, RightNode, TextNode, UserList};
-use crate::talks::talk_update_data::{message_event, name_event, remove_event, rps_event, update_data};
-use crate::{despawn_screen, BasicInfos, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
+use crate::talks::talk_update_data::{fail_event, message_event, name_event, off_event, remove_event, rps_event, update_data};
+use crate::{despawn_screen, BasicInfos, FailConnectMpsc, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
-use bevy::color::palettes::css::{BLACK, WHITE};
-use bevy::color::palettes::tailwind::BLUE_200;
+use bevy::color::palettes::css::{BLACK, RED, WHITE};
+use bevy::color::palettes::tailwind::{BLUE_200, GRAY_600};
 use bevy::input::ButtonInput;
-use bevy::prelude::{in_state, BorderRadius, Button, Children, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Single, Spawn, SpawnRelated, State, Text, Transform, With};
+use bevy::prelude::{in_state, BorderRadius, Button, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Message, MessageReader, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Scroll, Single, Spawn, SpawnRelated, State, Text, Transform, Trigger, With};
 use bevy::text::{TextColor, TextFont, TextLayout};
 use bevy::ui::{AlignItems, BackgroundColor, ComputedNode, JustifyContent, Node, UiRect, Val};
 use bevy::utils::default;
@@ -16,11 +16,13 @@ use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 use bevy_bc_ime_text_field::text_field_style::TextFieldStyle;
 use server_lib::{tokio_spawn, Data, DataType, DataTypeKind};
 use std::sync::Arc;
-use bevy::color::palettes::basic::{BLUE, RED};
+use bevy::prelude::*;
+use crate::scroll::ScrollComponent;
 
 pub fn talk_plugin(app: &mut App){
     app.add_systems(OnEnter(TalkState::Display), (setup, get_data))
         .add_systems(Update,update_data.run_if(in_state(TalkState::Display)))
+        .add_systems(Update,fail_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,change_chat.run_if(in_state(TalkState::Display)))
         .add_systems(Update,change_display.run_if(in_state(TalkState::Display)))
         .add_systems(Update,on_modal.run_if(in_state(TalkState::Display)))
@@ -28,6 +30,7 @@ pub fn talk_plugin(app: &mut App){
         .add_systems(Update,remove_event .run_if(in_state(TalkState::Display)))
         .add_systems(Update,message_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,rps_event.run_if(in_state(TalkState::Display)))
+        .add_systems(Update,off_event.run_if(in_state(TalkState::Display)))
         .add_systems(OnExit(TalkState::Display), despawn_screen::<OnTalkState>);
 }
 
@@ -76,7 +79,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                         ..default()
                     },
                     InheritedVisibility::default(),
-                    UserList
+                    UserList,
+                    ScrollComponent
                 ));
             });
 
@@ -163,14 +167,18 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                 },
                 //BackgroundColor( RED.into()),
                 ChatParent
-            )).with_child((
-                Node {
-                    width: Val::Percent(100.0),
-                    flex_direction: FlexDirection::Column,
-                    ..default()
-                },
-                Chat,
-            ));
+            )).with_children(|p|{
+                p.spawn((
+                    Node {
+                        width: Val::Percent(100.0),
+                        flex_direction: FlexDirection::Column,
+                        bottom: Val::Px(0.0),
+                        ..default()
+                    },
+                    Chat,
+                    ScrollComponent
+                ));
+            });
 
             p.spawn((
                 Node {
@@ -207,7 +215,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     trigger: On<EnterEvent>,
                     mut q_field: Query<&mut TextField>,
                     write_mpsc: Res<WriteMpsc>,
-                    basic_infos: Res<BasicInfos>
+                    basic_infos: Res<BasicInfos>,
+                    mut s_chat: Single<&mut Node,With<Chat>>
                 | {
                     if let Ok(mut field) = q_field.get_mut(trigger.entity) {
                         if field.text.trim().is_empty()
@@ -222,6 +231,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                             inform: DataType::Message(Arc::new(field.text.clone().trim().to_string()))
                         });
                         field.text = "".to_string();
+
+                        s_chat.bottom = Val::Px(0.0);
                     }
                 });
             });
@@ -260,25 +271,31 @@ fn get_data(
     talk_mpsc: Res<TalkMpsc> ,
     basic_infos: Res<BasicInfos>,
     write_mpsc: Res<WriteMpsc>,
-    server_off: Res<ServerOffBroadcast>
+    server_off: Res<ServerOffBroadcast>,
+    fail_mpsc: Res<FailConnectMpsc>,
 ) {
     let infos = basic_infos.clone();
     let addr = server.addr.clone();
     if let Some(rt) = rt.0.clone() {
         let tx = talk_mpsc.0.clone();
+        let f_tx = fail_mpsc.0.clone();
         let mut rx = write_mpsc.0.subscribe();
         let mut server_rx = server_off.0.subscribe();
         tokio_spawn(rt,async move{
             if let Ok(stream) = server_lib::join_server(infos.token, infos.name, addr).await {
                 let (mut r_stream, mut w_stream) = stream.into_split();
-
                 let r_tokio = tokio::spawn(async move{
                     loop {
                         let data = Data::read_data(&mut r_stream).await;
                         if let Ok(data) = data {
                             let _ = tx.send(data.clone()).await;
                             println!("Read(Client): {:?}",data);
-                        }else { println!("Read Error(Client): {:?}",data); }
+                        }else {
+                            println!("Read Error(Client): {:?}",data);
+                            let _ = f_tx.send(true).await;
+                            println!("Fail Connect!");
+                            break;
+                        }
                     }
                 });
 
@@ -294,6 +311,7 @@ fn get_data(
                 loop {
                     if let Ok(off) = server_rx.recv().await {
                         if off {
+                            println!("Server OFF");
                             r_tokio.abort();
                             w_tokio.abort();
                             break
@@ -301,7 +319,11 @@ fn get_data(
                     }
                 }
 
-            }else { println!("Fail Connect!") }
+            }else {
+
+                let _ = f_tx.send(true).await;
+                println!("Fail Connect!")
+            }
             println!("End");
         });
     }
