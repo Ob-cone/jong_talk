@@ -10,7 +10,7 @@ use crate::talks::host::host_plugin;
 use crate::talks::join::join_plugin;
 use crate::talks::talk::{talk_plugin,};
 use bevy::color::palettes::css::GRAY;
-use bevy::prelude::{Click, Local, Pointer, Res, State, Trigger};
+use bevy::prelude::{Click, Local, MessageReader, On, Or, Pointer, Res, State};
 use bevy::{
     app::{App, AppExit, Last, Startup, Update},
     color::palettes::basic::{BLACK, WHITE},
@@ -27,7 +27,6 @@ use bevy::{
         Commands,
         Component,
         Entity,
-        EventReader,
         Interaction,
         Query,
         ResMut,
@@ -49,17 +48,29 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::Arc;
+use cargo_toml::Manifest;
 use talks::modal::{modal_plugin, ModalState};
 use tokio::runtime::Runtime;
 use tokio::sync::{broadcast, mpsc};
 use toml::{Table, Value};
 use crate::scroll::scroll_plugin;
 use crate::talks::rps_game::{rps_plugin, RpsModalType, RpsModalResource, RpsList, RpsTimer};
-use crate::talks::talk_struct::{EventButtonState, EventState};
+use crate::talks::talk_struct::{EventButtonState, EventState, OffList};
 use crate::talks::talk_update_data::InputDataEvent;
 
 #[tokio::main]
 async fn main() {
+
+    // let bytes = include_bytes!("../Cargo.toml");
+    // let manifest = Manifest::from_slice(bytes).unwrap();
+    //
+    // let package = manifest.package.unwrap();
+    // println!("이름: {}", package.name);
+    // println!("버전: {:?}", package.version);
+    //
+    // for (name, dep) in &manifest.dependencies {
+    //     println!("{} = {:?}", name, dep);
+    // }
 
     let rt = set_up_tokio();
 
@@ -89,6 +100,7 @@ async fn main() {
         .insert_resource(RpsTimer::None)
         .insert_resource(RpsModalResource(RpsModalType::None))
         .insert_resource(RpsList(HashMap::<Vec<u8>,(String,String)>::new()))
+        .insert_resource(OffList(HashMap::<String,Vec<String>>::new()))
         .add_message::<InputDataEvent>()
         .add_systems(Startup,setup)
         .add_plugins(ImeTextFieldPlugin)
@@ -100,7 +112,7 @@ async fn main() {
         .run();
 }
 
-fn exit_program(mut exit_events: EventReader<AppExit>,mut rt: ResMut<RuntimeResource>){
+fn exit_program(mut exit_events: MessageReader<AppExit>,mut rt: ResMut<RuntimeResource>){
     let event = exit_events.read();
     if event.count() > 0 {
         if let Ok(runtime) = Arc::try_unwrap(rt.0.take().unwrap()) {
@@ -264,7 +276,7 @@ fn button_system(
             &Children,
             Option<&ButtonInfo>
         ),
-        (Changed<Interaction>, With<Button>)
+        (Or<(Changed<Interaction>, Changed<ButtonInfo>)>, With<Button>)
     >,
     mut q_text: Query<&mut TextColor>
 ) {
@@ -294,7 +306,7 @@ fn button_system(
     }
 }
 
-fn click_textfield(trigger: Trigger<Pointer<Click>>, mut child: Query<&Children>, mut field: Query<&mut TextFieldInfo>){
+fn click_textfield(trigger: On<Pointer<Click>>, mut child: Query<&Children>, mut field: Query<&mut TextFieldInfo>){
     if let Ok(children) = child.get_mut(trigger.entity){
         if let Ok(mut field) = field.get_mut(children[0]){
             field.focus = true;

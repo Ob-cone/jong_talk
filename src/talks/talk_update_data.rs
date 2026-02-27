@@ -1,5 +1,6 @@
+use std::collections::HashSet;
 use crate::talks::rps_game::{choice_to_string, RpsList, RpsModalResource, RpsModalType, RpsState};
-use crate::talks::talk_struct::{Chat, EventButtonState, EventState, Token, UserList};
+use crate::talks::talk_struct::{Chat, EventButtonState, EventState, OffList, Token, UserList};
 use crate::{BasicInfos, ButtonInfo, FailConnectMpsc, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
@@ -26,6 +27,39 @@ pub(crate) fn update_data(
     }
 }
 
+pub(crate) fn rps_change(
+    res_rps_list: Res<RpsList>,
+    mut q_button: Query<(&mut ButtonInfo,&Token)>
+){
+    println!("바뀜R");
+    let mut list = HashSet::<&String>::new();
+    for (a,b) in res_rps_list.0.values(){
+        list.insert(a);
+        list.insert(b);
+    }
+    println!("RPS: {:?}",list);
+    for (mut button,token) in q_button.iter_mut(){
+        println!("C: {:?} {:?}",token.0.clone(),list.contains(&token.0));
+        button.0 = !list.contains(&token.0);
+    }
+}
+
+pub(crate) fn off_change(
+    basic_infos: Res<BasicInfos>,
+    res_off_list: Res<OffList>,
+    mut q_button: Query<(&mut ButtonInfo,&Token)>
+){
+    println!("바뀜O");
+    if let Some(list) = res_off_list.0.get(&basic_infos.token){
+        for (mut button,token) in q_button.iter_mut(){
+            button.0 = list.contains(&token.0);
+        }
+    }else {
+        for (mut button,token) in q_button.iter_mut(){
+            button.0 = false;
+        }
+    }
+}
 
 pub(crate) fn fail_event(
     mut commands: Commands,
@@ -54,6 +88,7 @@ pub(crate) fn fail_event(
 pub(crate) fn game_data_event(
     mut event: MessageReader<InputDataEvent>,
     mut res_rps_list: ResMut<RpsList>,
+    mut res_off_list: ResMut<OffList>
 ){
     for event in event.read(){
         if let DataTypeKind::RPS = event.0.type_kind{
@@ -64,6 +99,14 @@ pub(crate) fn game_data_event(
                     let token2 = format!("{}",&token);
                     res_rps_list.0.insert(v,(token1,token2));
                 }
+            }
+        }
+        else if let DataTypeKind::OffData = event.0.type_kind {
+            let data = event.0.clone();
+            if let DataType::OffData(token) = data.inform{
+                let token1 = format!("{}",&data.token.unwrap());
+                let token2 = format!("{}",&token);
+                res_off_list.0.entry(token1.clone()).or_insert(vec![]).push(token2.clone());
             }
         }
     }
@@ -143,11 +186,19 @@ pub(crate) fn name_event(
                                 trigger: On<Pointer<Click>>,
                                 base: Res<BasicInfos>,
                                 q_token: Query<&Token>,
+                                q_button_info: Query<&ButtonInfo>,
                                 state: Res<EventButtonState>,
                                 write_mpsc: Res<WriteMpsc>,
                                 mut next_rps_state: ResMut<NextState<RpsState>>,
                                 mut rpstype: ResMut<RpsModalResource>
                             | {
+                                if let Ok(button_info) = q_button_info.get(trigger.entity) {
+                                    if !button_info.0 {
+                                        println!("작동 안할것임");
+                                        return;
+                                    }
+                                }
+
                                 if let Ok(token) = q_token.get(trigger.entity){
                                     match state.0 {
                                         EventState::RPS => {
@@ -291,7 +342,8 @@ pub(crate) fn rps_event(
     q_chat: Query<Entity,With<Chat>>,
     base: Res<BasicInfos>,
     mut next_rps_state: ResMut<NextState<RpsState>>,
-    mut rpstype: ResMut<RpsModalResource>
+    mut rpstype: ResMut<RpsModalResource>,
+    mut res_off_list: ResMut<OffList>
 ){
     for event in event.read(){
         if let DataTypeKind::RPS = event.0.type_kind{
@@ -357,7 +409,7 @@ pub(crate) fn rps_event(
                         }
 
                     }
-                    RPSType::Accept(id, isAccept) => {
+                    RPSType::Accept(id, is_accept) => {
                         println!("RPS: {:?} Id: {:?}",res_rps_list.0,id);
                         if let Some((send_token,accept_token)) = res_rps_list.0.get(&id){
 
@@ -389,7 +441,7 @@ pub(crate) fn rps_event(
                                         TextColor(BLACK.into())
                                     )).with_children(|p| {
                                         p.spawn((
-                                            TextSpan::new(if isAccept {
+                                            TextSpan::new(if is_accept {
                                                 " accepted "
                                             } else { " declined " }),
                                             base_font.clone(),
@@ -411,7 +463,7 @@ pub(crate) fn rps_event(
                                     });
                                 });
                             });
-                            if !isAccept{
+                            if !is_accept {
                                 res_rps_list.0.remove(&id);
                             }
                         }
@@ -430,12 +482,21 @@ pub(crate) fn rps_event(
                             let send_name = format!("{}",&res_user_list.0[send_token]);
                             let accept_name = format!("{}",&res_user_list.0[accept_token]);
 
-                            let mut win_name = if win.to_string() == "None"{
+                            let win_name = if win.to_string() == "None"{
                                 "None".to_string()
                             }
                             else {
                                 res_user_list.0[&win.to_string()].clone()
                             };
+
+                            let not_win_token = if send_token.to_string() == win.to_string(){
+                                accept_token.to_string()
+                            }else { win.to_string() };
+
+                            if win.to_string() != "None"{
+                                res_off_list.0.entry(win.to_string()).or_insert(vec![]).push(not_win_token.clone());
+                                println!("Off List: {:?}",res_off_list.0);
+                            }
 
                             let chat = q_chat.single().unwrap();
                             let mut chat = commands.get_entity(chat).unwrap();

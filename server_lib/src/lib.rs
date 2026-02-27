@@ -115,7 +115,7 @@ pub enum DataTypeKind {
     RPS = 103, // 가위 바위 보
     Off = 104,
     IsOff = 105,
-    OffData = 106
+    OffData = 106,
 }
 
 impl DataTypeKind {
@@ -271,7 +271,7 @@ pub enum RPSType {
     Game(Vec<u8>),
     Fail(Vec<u8>),
     Result(Vec<u8>, [u8; 2], CopyStr),
-    Data(Vec<u8>,CopyStr),
+    Data(Vec<u8>, CopyStr),
 }
 
 pub fn set_up_tokio() -> Runtime {
@@ -445,16 +445,16 @@ async fn process_socket(
         inform: DataType::Name(Arc::new(name.clone())),
     });
 
-    for (v,(a,b)) in rps_list.lock().await.iter(){
+    for (v, (a, b)) in rps_list.lock().await.iter() {
         let _ = tx.send(Data {
             token: Some(Arc::new(a.clone())),
             type_kind: DataTypeKind::RPS,
-            inform: DataType::RPS(RPSType::Data(v.clone(),Arc::new(b.clone()))),
+            inform: DataType::RPS(RPSType::Data(v.clone(), Arc::new(b.clone()))),
         });
     }
 
-    for (a,list) in off_list.lock().await.iter(){
-        for b in list{
+    for (a, list) in off_list.lock().await.iter() {
+        for b in list {
             let _ = tx.send(Data {
                 token: Some(Arc::new(a.clone())),
                 type_kind: DataTypeKind::OffData,
@@ -514,20 +514,19 @@ async fn process_socket(
                                         if let Some(index) = list.iter().position(|x| x == &token.to_string()) {
                                             list.remove(index);
                                         }
-                                }
-                                let _ = tx_w.send(Data {
-                                    token: None,
-                                    type_kind: DataTypeKind::Off,
-                                    inform: DataType::Off(token)
+                                    }
+                                    let _ = tx_w.send(Data {
+                                        token: None,
+                                        type_kind: DataTypeKind::Off,
+                                        inform: DataType::Off(token)
                                     });
-
                                 }
                             }
                         }
                     }
                     if data.type_kind == DataTypeKind::RPS{
                     if let DataType::RPS(rps) = data.inform{
-                        match rps {
+                        match rps.clone() {
                             RPSType::Send(id, token) => {
                                 if let Some(send_token) = data.token{
                                     rps_list.lock().await.insert(id,(send_token.to_string(),token.to_string()));
@@ -546,127 +545,23 @@ async fn process_socket(
                                     rps_game_list.lock().await.insert(id.clone(),HashMap::<String,u8>::new());
                                 }
                             }
-                            RPSType::Rock(id) => {
-                                if let Some(_token) = data.token{
-                                    if let Some(map) =rps_game_list.lock().await.get_mut(&id){
-                                        map.insert(_token.to_string(),0);
-                                    }
-                                    let list = rps_game_list.lock().await;
-                                    let mut is_remove = false;
-                                    if let Some(map) = list.get(&id){
-                                        if map.len() == 2{
-                                            if let Some( tokens) = rps_list.lock().await.get(&id){
-                                                let choice = (map.get(&tokens.0).unwrap().clone(),map.get(&tokens.1).unwrap().clone());
-                                                let result = game_result(tokens.clone(),choice);
-                                                let _ = tx_w.send(Data {
-                                                    token: None,
-                                                    type_kind: DataTypeKind::RPS,
-                                                    inform: DataType::RPS(RPSType::Result(id.clone(),[choice.0,choice.1],Arc::new(result.clone())))
-                                                });
-                                                if result != "None"{
-                                                    let win_token = result;
-                                                    if let Some(not_win_token) = [tokens.0.clone(),tokens.1.clone()].iter().find(|&x| x != &win_token){
-                                                        off_list.lock().await.entry(win_token.clone()).or_insert(vec![]).push(not_win_token.clone());
-                                                        let _ = tx.send(Data {
-                                                            token: Some(Arc::new(win_token.clone())),
-                                                            type_kind: DataTypeKind::OffData,
-                                                            inform: DataType::OffData(Arc::new(not_win_token.clone())),
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                            is_remove = true;
-                                        }
-                                    }
-                                    if is_remove{
-                                        drop(list);
-                                        rps_game_list.lock().await.remove(&id);
-                                        rps_list.lock().await.remove(&id);
-                                    }
+                            RPSType::Rock(id)
+                            | RPSType::Paper(id)
+                            | RPSType::Scissor(id)
+                            | RPSType::Fail(id) => {
+                                let select = if let RPSType::Rock(_) = rps{
+                                   0
                                 }
-                            }
-                            RPSType::Paper(id) => {
+                                else if let RPSType::Paper(_) = rps{
+                                   1
+                                }else if let RPSType::Scissor(_) = rps{
+                                    2
+                                }else{
+                                    3
+                                };
                                 if let Some(_token) = data.token{
                                     if let Some(map) =rps_game_list.lock().await.get_mut(&id){
-                                        map.insert(_token.to_string(),1);
-                                    }
-                                    let list = rps_game_list.lock().await;
-                                    let mut is_remove = false;
-                                    if let Some(map) = list.get(&id){
-                                        if map.len() == 2{
-                                            if let Some( tokens) = rps_list.lock().await.get(&id){
-                                                let choice = (map.get(&tokens.0).unwrap().clone(),map.get(&tokens.1).unwrap().clone());
-                                                let result = game_result(tokens.clone(),choice);
-                                                let _ = tx_w.send(Data {
-                                                    token: None,
-                                                    type_kind: DataTypeKind::RPS,
-                                                    inform: DataType::RPS(RPSType::Result(id.clone(),[choice.0,choice.1],Arc::new(result.clone())))
-                                                });
-                                                if result != "None"{
-                                                    let win_token = result;
-                                                    if let Some(not_win_token) = [tokens.0.clone(),tokens.1.clone()].iter().find(|&x| x != &win_token){
-                                                        off_list.lock().await.entry(win_token.clone()).or_insert(vec![]).push(not_win_token.clone());
-                                                        let _ = tx.send(Data {
-                                                            token: Some(Arc::new(win_token.clone())),
-                                                            type_kind: DataTypeKind::OffData,
-                                                            inform: DataType::OffData(Arc::new(not_win_token.clone())),
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                            is_remove = true;
-                                        }
-                                    }
-                                    if is_remove{
-                                        drop(list);
-                                        rps_game_list.lock().await.remove(&id);
-                                        rps_list.lock().await.remove(&id);
-                                    }
-                                }
-                            }
-                            RPSType::Scissor(id) => {
-                                if let Some(_token) = data.token{
-                                    if let Some(map) =rps_game_list.lock().await.get_mut(&id){
-                                        map.insert(_token.to_string(),2);
-                                    }
-                                    let list = rps_game_list.lock().await;
-                                    let mut is_remove = false;
-                                    if let Some(map) = list.get(&id){
-                                        if map.len() == 2{
-                                            if let Some( tokens) = rps_list.lock().await.get(&id){
-                                                let choice = (map.get(&tokens.0).unwrap().clone(),map.get(&tokens.1).unwrap().clone());
-                                                let result = game_result(tokens.clone(),choice);
-                                                let _ = tx_w.send(Data {
-                                                    token: None,
-                                                    type_kind: DataTypeKind::RPS,
-                                                    inform: DataType::RPS(RPSType::Result(id.clone(),[choice.0,choice.1],Arc::new(result.clone())))
-                                                });
-                                                if result != "None"{
-                                                    let win_token = result;
-                                                    if let Some(not_win_token) = [tokens.0.clone(),tokens.1.clone()].iter().find(|&x| x != &win_token){
-                                                        off_list.lock().await.entry(win_token.clone()).or_insert(vec![]).push(not_win_token.clone());
-                                                        let _ = tx.send(Data {
-                                                            token: Some(Arc::new(win_token.clone())),
-                                                            type_kind: DataTypeKind::OffData,
-                                                            inform: DataType::OffData(Arc::new(not_win_token.clone())),
-                                                        });
-                                                    }
-                                                }
-                                            }
-                                            is_remove = true;
-                                        }
-                                    }
-                                    if is_remove{
-                                        drop(list);
-                                        rps_game_list.lock().await.remove(&id);
-                                        rps_list.lock().await.remove(&id);
-                                    }
-                                }
-                            }
-                            RPSType::Fail(id) => {
-                                if let Some(_token) = data.token{
-                                    if let Some(map) =rps_game_list.lock().await.get_mut(&id){
-                                        map.insert(_token.to_string(),3);
+                                        map.insert(_token.to_string(),select);
                                     }
                                     let list = rps_game_list.lock().await;
                                     let mut is_remove = false;
@@ -721,7 +616,6 @@ async fn process_socket(
         while let Ok(off) = off.recv().await {
             if off {
                 handle.abort();
-                handle_w.abort();
                 return;
             }
         }

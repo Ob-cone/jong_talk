@@ -1,18 +1,16 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::time::Instant;
+use crate::{despawn_screen, BasicInfos, Font, WriteMpsc};
 use bevy::app::App;
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, RED, WHITE};
 use bevy::color::palettes::css::{GRAY, WHEAT};
 use bevy::color::Srgba;
-use bevy::math::UVec2;
 use bevy::prelude::{default, in_state, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, ImageNode, IntoScheduleConfigs, JustifyContent, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Query, Res, ResMut, Resource, Single, States, Text, TextColor, TextFont, UiRect, Update, Val, With, ZIndex};
 use bevy::text::TextSpan;
-use bevy::ui::widget::ImageNodeSize;
 use rand::random_range;
-use server_lib::{CopyStr, Data, DataType, DataTypeKind, RPSType};
-use crate::{despawn_screen, BasicInfos, Font, WriteMpsc};
+use server_lib::{Data, DataType, DataTypeKind, RPSType};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Instant;
 
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -33,7 +31,7 @@ pub fn rps_plugin(app: &mut App)
 
 #[derive(Component)]
 struct Rps;
-#[derive(Resource,Clone)]
+#[derive(Resource,Clone,PartialEq)]
 pub struct RpsList(pub HashMap<Vec<u8>,(String,String)>);
 #[derive(Resource,Clone)]
 pub struct RpsModalResource(pub RpsModalType);

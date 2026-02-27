@@ -105,7 +105,24 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
         )).observe(|_: Trigger<Pointer<Click>>,mut app_exit: EventWriter<AppExit>| {
             app_exit.write(AppExit::Success);
         });
+
     });
+
+    commands.spawn(Node{
+        position_type: PositionType::Absolute,
+        bottom: Val::Px(10.0),
+        right: Val::Px(10.0),
+        ..default()
+    }).with_child((
+        Text::new("Made by Ob_Cone"),
+        TextFont{
+            font: asset_server.load(Font::Medium.get()),
+            font_size: 20.0,
+            ..default()
+        },
+        TextColor(BLACK.into())
+
+    ));
 
 }
 

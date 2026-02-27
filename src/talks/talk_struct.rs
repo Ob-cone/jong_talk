@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use bevy::prelude::{Component, Resource};
 
 #[derive(Component)]
@@ -27,12 +28,16 @@ pub struct MainNode;
 pub struct ChatField;
 
 #[derive(Resource,Debug)]
+#[derive(PartialEq)]
 pub struct EventButtonState(pub EventState);
 
 #[derive(Component)]
 pub struct EventStateChangeButton;
+#[derive(Resource,Debug)]
+pub struct OffList(pub HashMap<String,Vec<String>>);
 
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub enum EventState{
     RPS,
     OFF

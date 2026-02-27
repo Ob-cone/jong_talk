@@ -1,6 +1,6 @@
 use crate::talks::modal::ModalState;
-use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OnTalkState, RightNode, TextNode, UserList};
-use crate::talks::talk_update_data::{fail_event, message_event, name_event, off_event, remove_event, rps_event, update_data};
+use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OffList, OnTalkState, RightNode, TextNode, UserList};
+use crate::talks::talk_update_data::{fail_event, game_data_event, message_event, name_event, off_change, off_event, remove_event, rps_change, rps_event, update_data};
 use crate::{despawn_screen, BasicInfos, FailConnectMpsc, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
@@ -18,6 +18,7 @@ use server_lib::{tokio_spawn, Data, DataType, DataTypeKind};
 use std::sync::Arc;
 use bevy::prelude::*;
 use crate::scroll::ScrollComponent;
+use crate::talks::rps_game::RpsList;
 
 pub fn talk_plugin(app: &mut App){
     app.add_systems(OnEnter(TalkState::Display), (setup, get_data))
@@ -31,6 +32,18 @@ pub fn talk_plugin(app: &mut App){
         .add_systems(Update,message_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,rps_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,off_event.run_if(in_state(TalkState::Display)))
+        .add_systems(Update,game_data_event.run_if(in_state(TalkState::Display)))
+        .add_systems(Update,rps_change.run_if(
+            in_state(TalkState::Display)
+                .and(resource_equals(EventButtonState(EventState::RPS)))
+                .and(resource_changed::<RpsList>.or(resource_changed::<EventButtonState>))
+
+        ))
+        .add_systems(Update,off_change.run_if(
+            in_state(TalkState::Display)
+                .and(resource_equals(EventButtonState(EventState::OFF)))
+                .and(resource_changed::<OffList>.or(resource_changed::<EventButtonState>))
+        ))
         .add_systems(OnExit(TalkState::Display), despawn_screen::<OnTalkState>);
 }
 
