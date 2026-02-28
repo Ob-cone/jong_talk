@@ -178,6 +178,24 @@ fn setup(
                 ));
 
                 p.spawn(title_node.clone()).with_child((
+                    Text("Font".to_string()),
+                    title_font.clone()
+                ));
+
+                p.spawn(info_node.clone()).with_children(|p| {
+                    p.spawn((Text("PAPERLOGY".to_string()), info_font.clone()));
+                    p.spawn((Text("LEE_JUIM".to_string()), info_font.clone()));
+                }).observe(|_:On<Pointer<Click>>| {
+                    let _ = open::that("https://freesentation.blog/paperlogyfont");
+                });
+
+                p.spawn(title_node.clone()).with_child((
+                    Text(" ".to_string()),
+                    title_font.clone()
+                ));
+
+
+                p.spawn(title_node.clone()).with_child((
                     Text("Special Thanks".to_string()),
                     title_font.clone()
                 ));
@@ -193,7 +211,7 @@ fn setup(
                             }
                         }
                     };
-
+                    println!("{:?}",name);
                     let mut entity = p.spawn(info_node.clone());
                     entity.with_children(|p| {
                         p.spawn((Text(name.to_string()), info_font.clone()));

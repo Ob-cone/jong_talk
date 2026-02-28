@@ -5,11 +5,16 @@ mod setting;
 mod scroll;
 mod info;
 
+use crate::info::{info_plugin, InfoState};
 use crate::main_home::main_plugin;
+use crate::scroll::scroll_plugin;
 use crate::setting::setting_plugin;
 use crate::talks::host::host_plugin;
 use crate::talks::join::join_plugin;
-use crate::talks::talk::{talk_plugin,};
+use crate::talks::rps_game::{rps_plugin, RpsList, RpsModalResource, RpsModalType, RpsTimer};
+use crate::talks::talk::talk_plugin;
+use crate::talks::talk_struct::{EventButtonState, EventState, OffList};
+use crate::talks::talk_update_data::InputDataEvent;
 use bevy::color::palettes::css::GRAY;
 use bevy::prelude::{Click, Local, MessageReader, On, Or, Pointer, Res, State};
 use bevy::{
@@ -49,16 +54,10 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::sync::Arc;
-use cargo_toml::Manifest;
 use talks::modal::{modal_plugin, ModalState};
 use tokio::runtime::Runtime;
 use tokio::sync::{broadcast, mpsc};
 use toml::{Table, Value};
-use crate::info::{info_plugin, InfoState};
-use crate::scroll::scroll_plugin;
-use crate::talks::rps_game::{rps_plugin, RpsModalType, RpsModalResource, RpsList, RpsTimer};
-use crate::talks::talk_struct::{EventButtonState, EventState, OffList};
-use crate::talks::talk_update_data::InputDataEvent;
 
 #[tokio::main]
 async fn main() {
@@ -263,8 +262,8 @@ enum Font{
 impl Font {
     fn get(self) -> &'static str {
         match self {
-            Font::Bold => "Paperlogy-7Bold.ttf",
-            Font::Medium => "Paperlogy-5Medium.ttf"
+            Font::Bold => "fonts/Paperlogy-7Bold.ttf",
+            Font::Medium => "fonts/Paperlogy-5Medium.ttf"
         }
     }
 }
