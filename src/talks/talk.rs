@@ -86,6 +86,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
             )).with_children(|parent| {
                 parent.spawn((
                     Node {
+                        top: Val::Px(0.0),
                         width: Val::Percent(100.0),
                         max_height: Val::Percent(100.0),
                         flex_direction: FlexDirection::Column,
@@ -93,7 +94,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     },
                     InheritedVisibility::default(),
                     UserList,
-                    ScrollComponent
+                    ScrollComponent::Top
                 ));
             });
 
@@ -189,7 +190,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                         ..default()
                     },
                     Chat,
-                    ScrollComponent
+                    ScrollComponent::Bottom
                 ));
             });
 
