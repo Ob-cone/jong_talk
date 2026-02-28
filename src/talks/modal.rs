@@ -4,9 +4,9 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::WHITE;
 use bevy::color::palettes::css::{BLACK, WHEAT};
 use bevy::color::{Color, Srgba};
-use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, EventWriter, FlexDirection, JustifyContent, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Press, Query, Release, Res, ResMut, States, Text, Trigger, Val};
+use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, JustifyContent, MessageWriter, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Press, Query, Release, Res, ResMut, States, Text, Val};
 use bevy::text::{TextColor, TextFont};
-use bevy::ui::{Pressed, UiRect, ZIndex};
+use bevy::ui::{UiRect, ZIndex};
 
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -54,10 +54,10 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 row_gap: Val::Px(10.0),
+                border_radius: BorderRadius::all(Val::Px(12.0)),
                 ..default()
             },
             ui_layer.clone(),
-            BorderRadius::all(Val::Px(12.0)),
             BackgroundColor(WHEAT.into()),
         )).with_children(|p| {
 
@@ -68,10 +68,10 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                     height: Val::Px(60.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
+                    border_radius:BorderRadius::all(Val::Px(12.0)),
                     ..default()
                 },
                 ui_layer.clone(),
-                BorderRadius::all(Val::Px(12.0)),
                 BackgroundColor(WHITE.into()),
             );
 
@@ -144,7 +144,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                 Text::new("Setting"),
                 base_font.clone()
             )).observe(|
-                _: Trigger<Pointer<Click>>,
+                _: On<Pointer<Click>>,
                 mut next_state: ResMut<NextState<MainState>>,
                 mut next_modal_state: ResMut<NextState<ModalState>>,
             | {
@@ -155,7 +155,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
             p.spawn(base_node.clone()).with_child((
                 Text::new("Quit"),
                 base_font.clone()
-            )).observe(|_: Trigger<Pointer<Click>>,mut app_exit: EventWriter<AppExit>| {
+            )).observe(|_: On<Pointer<Click>>,mut app_exit: MessageWriter<AppExit>| {
                 app_exit.write(AppExit::Success);
             });
 

@@ -6,7 +6,7 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
 use bevy::color::Color;
 use bevy::picking::Pickable;
-use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, Interaction, IntoScheduleConfigs, JustifyContent, Node, OnEnter, OnExit, Overflow, Pointer, Query, Res, Single, Text, TextColor, TextFont, Trigger, Update, Val, With};
+use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, Interaction, IntoScheduleConfigs, JustifyContent, Node, On, OnEnter, OnExit, Overflow, Pointer, Query, Res, Single, Text, TextColor, TextFont, Update, Val, With};
 use bevy::tasks::IoTaskPool;
 use bevy::text::TextLayoutInfo;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
@@ -56,10 +56,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 overflow: Overflow::clip(),
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0)),
             HasTextField
         )).with_child((
             TextField::default(),
@@ -94,10 +94,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     overflow: Overflow::hidden(),
+                    border_radius: BorderRadius::all(Val::Px(2.0)),
                     ..default()
                 },
                 BackgroundColor(WHITE.into()),
-                BorderRadius::all(Val::Px(2.0))
             )).with_child((
                 CheckText,
                 Text::new("•"),
@@ -111,7 +111,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                     should_block_lower: false,
                     is_hoverable: false
                 }
-            )).observe(|_: Trigger<Pointer<Click>>, 
+            )).observe(|_: On<Pointer<Click>>,
                         mut style : Query<&mut TextFieldStyle>, 
                         mut color: Single<&mut TextColor,With<CheckText>>
             | {
@@ -146,11 +146,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 overflow: Overflow::hidden(),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0))
         )).with_child((
             Text::new("Join"),
             TextFont {
@@ -159,7 +159,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 ..default()
             },
             TextColor(BLACK.into())
-        )).observe(|_: Trigger<Pointer<Click>>,
+        )).observe(|_: On<Pointer<Click>>,
                           text_field: Query<&TextField>,
                           rt: Res<RuntimeResource>,
                           basic_infos: Res<BasicInfos>,

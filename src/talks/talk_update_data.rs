@@ -163,11 +163,11 @@ pub(crate) fn name_event(
                                     height: Val::Px(30.0),
                                     position_type: PositionType::Absolute,
                                     justify_content: JustifyContent::Center,
+                                    border_radius: BorderRadius::all(Val::Px(10.0)),
                                     align_items: AlignItems::Center,
                                     right: Val::ZERO,
                                     ..default()
                                 },
-                                BorderRadius::all(Val::Px(10.0)),
                                 BackgroundColor(WHITE.into()),
                                 Token(token.clone()),
                             )).with_child((
@@ -190,11 +190,10 @@ pub(crate) fn name_event(
                                 state: Res<EventButtonState>,
                                 write_mpsc: Res<WriteMpsc>,
                                 mut next_rps_state: ResMut<NextState<RpsState>>,
-                                mut rpstype: ResMut<RpsModalResource>
+                                mut rps_type: ResMut<RpsModalResource>
                             | {
                                 if let Ok(button_info) = q_button_info.get(trigger.entity) {
                                     if !button_info.0 {
-                                        println!("작동 안할것임");
                                         return;
                                     }
                                 }
@@ -202,7 +201,7 @@ pub(crate) fn name_event(
                                 if let Ok(token) = q_token.get(trigger.entity){
                                     match state.0 {
                                         EventState::RPS => {
-                                            *rpstype = RpsModalResource(RpsModalType::Send(token.0.clone()));
+                                            *rps_type = RpsModalResource(RpsModalType::Send(token.0.clone()));
                                             next_rps_state.set(RpsState::Display);
                                         }
                                         EventState::OFF => {

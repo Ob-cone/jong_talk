@@ -3,12 +3,13 @@ use crate::{despawn_screen, BasicInfos, Font, MainState};
 use bevy::app::App;
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
-use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Commands, Component, FlexDirection, JustifyContent, Node, OnEnter, OnExit, Query, Res, ResMut, TextFont, Trigger, Val};
+use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Commands, Component, FlexDirection, JustifyContent, Node, On, OnEnter, OnExit, Query, Res, ResMut, TextFont, Val};
 use bevy_bc_ime_text_field::event::EnterEvent;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 use bevy_bc_ime_text_field::text_field_style::TextFieldStyle;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, SeekFrom, Write};
+use bevy::ecs::event::Trigger;
 use toml::{Table, Value};
 
 pub fn setting_plugin(app: &mut App){
@@ -47,10 +48,10 @@ fn setup(
                 height: Val::Px(60.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0))
         )).with_children(|p| {
             p.spawn((
                 TextField::default(),
@@ -69,7 +70,7 @@ fn setup(
                     color: BLACK.into(),
                     ..default()
                 }
-            )).observe(|trigger: Trigger<EnterEvent>, mut basic_infos: ResMut<BasicInfos>,mut q_field: Query<(&mut TextField,&mut TextFieldInfo)>|{
+            )).observe(|trigger: On<EnterEvent>, mut basic_infos: ResMut<BasicInfos>,mut q_field: Query<(&mut TextField,&mut TextFieldInfo)>|{
                 if let Ok((mut field, mut layout)) = q_field.get_mut(trigger.entity) {
                     if !trigger.text_field.text.trim().is_empty(){
                         basic_infos.name = field.text.trim().to_string();

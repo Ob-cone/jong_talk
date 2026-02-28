@@ -1,13 +1,16 @@
+use crate::scroll::ScrollComponent;
 use crate::talks::modal::ModalState;
+use crate::talks::rps_game::RpsList;
 use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OffList, OnTalkState, RightNode, TextNode, UserList};
 use crate::talks::talk_update_data::{fail_event, game_data_event, message_event, name_event, off_change, off_event, remove_event, rps_change, rps_event, update_data};
 use crate::{despawn_screen, BasicInfos, FailConnectMpsc, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
-use bevy::color::palettes::css::{BLACK, RED, WHITE};
-use bevy::color::palettes::tailwind::{BLUE_200, GRAY_600};
+use bevy::color::palettes::css::{BLACK, WHITE};
+use bevy::color::palettes::tailwind::BLUE_200;
 use bevy::input::ButtonInput;
-use bevy::prelude::{in_state, BorderRadius, Button, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Message, MessageReader, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Scroll, Single, Spawn, SpawnRelated, State, Text, Transform, Trigger, With};
+use bevy::prelude::*;
+use bevy::prelude::{in_state, BorderRadius, Button, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Single, SpawnRelated, State, Text, Transform, With};
 use bevy::text::{TextColor, TextFont, TextLayout};
 use bevy::ui::{AlignItems, BackgroundColor, ComputedNode, JustifyContent, Node, UiRect, Val};
 use bevy::utils::default;
@@ -16,9 +19,6 @@ use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 use bevy_bc_ime_text_field::text_field_style::TextFieldStyle;
 use server_lib::{tokio_spawn, Data, DataType, DataTypeKind};
 use std::sync::Arc;
-use bevy::prelude::*;
-use crate::scroll::ScrollComponent;
-use crate::talks::rps_game::RpsList;
 
 pub fn talk_plugin(app: &mut App){
     app.add_systems(OnEnter(TalkState::Display), (setup, get_data))
@@ -67,9 +67,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                 height: Val::Percent(100.0),
                 row_gap: Val::Px(10.0),
                 flex_direction: FlexDirection::Column,
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
-            BorderRadius::all(Val::Px(15.0))
         )).with_children(|parent| {
 
             parent.spawn((
@@ -79,10 +79,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     height: Val::Percent(100.0 - 7.5),
                     overflow: Overflow::hidden(),
                     padding: UiRect::all(Val::Px(10.0)),
+                    border_radius:BorderRadius::all(Val::Px(15.0)),
                     ..default()
                 },
                 BackgroundColor(WHITE.into()),
-                BorderRadius::all(Val::Px(15.0)),
             )).with_children(|parent| {
                 parent.spawn((
                     Node {
@@ -104,10 +104,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     height: Val::Percent(7.5),
                     padding: UiRect::all(Val::Px(10.0)),
                     align_items: AlignItems::Center,
+                    border_radius:BorderRadius::all(Val::Px(15.0)),
                     ..default()
                 },
                 BackgroundColor(WHITE.into()),
-                BorderRadius::all(Val::Px(15.0))
             )).with_children(|p| {
 
                 p.spawn((
@@ -128,9 +128,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         right: Val::Px(10.0),
+                        border_radius: BorderRadius::all(Val::Px(10.0)),
                         ..default()
                     },
-                    BorderRadius::all(Val::Px(10.0)),
                     BackgroundColor(WHITE.into()),
                 )).with_child((
                     EventStateChangeButton,
@@ -163,10 +163,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                 height: Val::Percent(100.0),
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::End,
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0)),
             RightNode
         )).with_children(|p| {
 
@@ -200,10 +200,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     max_height: Val::Percent(20.0),
                     width: Val::Percent(100.0),
                     padding: UiRect::all(Val::Px(10.0)),
+                    border_radius: BorderRadius::all(Val::Px(15.0)),
                     ..default()
                 },
                 BackgroundColor(BLUE_200.into()),
-                BorderRadius::all(Val::Px(15.0)),
                 TextNode
             )).with_children(|p| {
                 p.spawn((

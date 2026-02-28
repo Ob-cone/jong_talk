@@ -3,6 +3,7 @@ mod main_home;
 mod talks;
 mod setting;
 mod scroll;
+mod info;
 
 use crate::main_home::main_plugin;
 use crate::setting::setting_plugin;
@@ -53,6 +54,7 @@ use talks::modal::{modal_plugin, ModalState};
 use tokio::runtime::Runtime;
 use tokio::sync::{broadcast, mpsc};
 use toml::{Table, Value};
+use crate::info::{info_plugin, InfoState};
 use crate::scroll::scroll_plugin;
 use crate::talks::rps_game::{rps_plugin, RpsModalType, RpsModalResource, RpsList, RpsTimer};
 use crate::talks::talk_struct::{EventButtonState, EventState, OffList};
@@ -60,17 +62,6 @@ use crate::talks::talk_update_data::InputDataEvent;
 
 #[tokio::main]
 async fn main() {
-
-    // let bytes = include_bytes!("../Cargo.toml");
-    // let manifest = Manifest::from_slice(bytes).unwrap();
-    //
-    // let package = manifest.package.unwrap();
-    // println!("이름: {}", package.name);
-    // println!("버전: {:?}", package.version);
-    //
-    // for (name, dep) in &manifest.dependencies {
-    //     println!("{} = {:?}", name, dep);
-    // }
 
     let rt = set_up_tokio();
 
@@ -88,6 +79,7 @@ async fn main() {
         .init_state::<MainState>()
         .init_state::<ModalState>()
         .init_state::<TalkState>()
+        .init_state::<InfoState>()
         .insert_resource(JoinResultReceiver(j_tx,j_rx))
         .insert_resource(TalkMpsc(t_tx,t_rx))
         .insert_resource(FailConnectMpsc(f_tx,f_rx))
@@ -105,7 +97,16 @@ async fn main() {
         .add_systems(Startup,setup)
         .add_plugins(ImeTextFieldPlugin)
         .add_plugins(scroll_plugin)
-        .add_plugins((main_plugin,host_plugin,join_plugin,talk_plugin,setting_plugin,modal_plugin,rps_plugin))
+        .add_plugins((
+            main_plugin,
+            info_plugin,
+            host_plugin,
+            join_plugin,
+            talk_plugin,
+            setting_plugin,
+            modal_plugin,
+            rps_plugin
+        ))
         .add_systems(Update,button_system)
         .add_systems(Update,update_last_state)
         .add_systems(Last,exit_program)

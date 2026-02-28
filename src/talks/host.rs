@@ -4,7 +4,7 @@ use crate::{despawn_screen, get_ip, BasicInfos, Font, JoinResultReceiver, MainSt
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::css::{BLACK, WHITE};
-use bevy::prelude::{in_state, AlignItems, Button, Click, Commands, Component, FlexDirection, IntoScheduleConfigs, JustifyContent, OnEnter, OnExit, Pointer, Query, Res, Text, Trigger};
+use bevy::prelude::{in_state, AlignItems, Button, Click, Commands, Component, FlexDirection, IntoScheduleConfigs, JustifyContent, On, OnEnter, OnExit, Pointer, Query, Res, Text};
 use bevy::tasks::IoTaskPool;
 use bevy::text::{TextColor, TextFont};
 use bevy::ui::{BackgroundColor, BorderRadius, Node, Overflow, Val};
@@ -46,10 +46,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 height: Val::Px(60.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0))
         )).with_child((
             TextField::default(),
             TextFieldInfo {
@@ -77,10 +77,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 overflow: Overflow::hidden(),
+                border_radius: BorderRadius::all(Val::Px(15.0)),
                 ..default()
             },
             BackgroundColor(WHITE.into()),
-            BorderRadius::all(Val::Px(15.0))
         )).with_child((
             Text::new("Host"),
             TextFont {
@@ -89,7 +89,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 ..default()
             },
             TextColor(BLACK.into())
-        )).observe(|_: Trigger<Pointer<Click>>,
+        )).observe(|_: On<Pointer<Click>>,
                     text_field: Query<&TextField>,
                     rt: Res<RuntimeResource>,
                     basic_infos: Res<BasicInfos>,

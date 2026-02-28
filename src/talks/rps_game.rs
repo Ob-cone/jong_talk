@@ -90,10 +90,10 @@ fn rps_modal(
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         row_gap: Val::Px(10.0),
+                        border_radius: BorderRadius::all(Val::Px(12.0)),
                         ..default()
                     },
                     ui_layer.clone(),
-                    BorderRadius::all(Val::Px(12.0)),
                     BackgroundColor(WHEAT.into()),
                 )).with_children(|p| {
                     p.spawn((
@@ -165,10 +165,10 @@ fn rps_modal(
                                 height: Val::Px(60.0),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
+                                border_radius: BorderRadius::all(Val::Px(12.0)),
                                 ..default()
                             },
                             ui_layer.clone(),
-                            BorderRadius::all(Val::Px(12.0)),
                             BackgroundColor(WHITE.into()),
                         );
 
@@ -235,11 +235,11 @@ fn rps_modal(
                         padding: UiRect::all(Val::Px(10.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
+                        border_radius: BorderRadius::all(Val::Px(12.0)),
                         row_gap: Val::Px(10.0),
                         ..default()
                     },
                     ui_layer.clone(),
-                    BorderRadius::all(Val::Px(12.0)),
                     BackgroundColor(WHEAT.into()),
                 )).with_children(|p| {
                     p.spawn((
@@ -329,10 +329,10 @@ fn rps_modal(
                                 height: Val::Px(60.0),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
+                                border_radius: BorderRadius::all(Val::Px(12.0)),
                                 ..default()
                             },
                             ui_layer.clone(),
-                            BorderRadius::all(Val::Px(12.0)),
                             BackgroundColor(WHITE.into()),
                         );
 
@@ -415,11 +415,11 @@ fn rps_modal(
                         padding: UiRect::all(Val::Px(10.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
+                        border_radius: BorderRadius::all(Val::Px(12.0)),
                         row_gap: Val::Px(10.0),
                         ..default()
                     },
                     ui_layer.clone(),
-                    BorderRadius::all(Val::Px(12.0)),
                     BackgroundColor(WHEAT.into()),
                 )).with_children(|p| {
 
@@ -456,10 +456,10 @@ fn rps_modal(
                                 height: Val::Auto,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
+                                border_radius: BorderRadius::all(Val::Px(12.0)),
                                 ..default()
                             },
                             ui_layer.clone(),
-                            BorderRadius::all(Val::Px(12.0)),
                             BackgroundColor(WHITE.into()),
                         );
 

@@ -486,7 +486,7 @@ async fn process_socket(
     });
     let tx_w = tx.clone();
     let mut off_w = off.resubscribe();
-    let handle_w = tokio::spawn(async move {
+    let _handle_w = tokio::spawn(async move {
         loop {
             tokio::select! {
                 Ok(data) = rx.recv() => {
