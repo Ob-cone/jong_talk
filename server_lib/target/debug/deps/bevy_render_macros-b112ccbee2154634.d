@@ -1,8 +1,0 @@
-D:\Code\Rust\jong_talk\server_lib\target\debug\deps\bevy_render_macros-b112ccbee2154634.dll: C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\lib.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\as_bind_group.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_component.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_resource.rs
-
-D:\Code\Rust\jong_talk\server_lib\target\debug\deps\bevy_render_macros-b112ccbee2154634.d: C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\lib.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\as_bind_group.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_component.rs C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_resource.rs
-
-C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\lib.rs:
-C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\as_bind_group.rs:
-C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_component.rs:
-C:\Users\user210814\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render_macros-0.16.1\src\extract_resource.rs:
