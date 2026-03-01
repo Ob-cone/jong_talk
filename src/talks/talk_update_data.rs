@@ -7,7 +7,7 @@ use bevy::color::palettes::basic::{BLACK, WHITE};
 use bevy::color::palettes::tailwind::{GRAY_600, RED_500};
 use bevy::picking::Pickable;
 use bevy::prelude::{default, AlignItems, BackgroundColor, BorderRadius, Button, Children, Click, Commands, Entity, Event, FlexDirection, JustifyContent, LineBreak, Message, MessageReader, MessageWriter, NextState, Node, On, Pointer, PositionType, Query, Res, ResMut, Text, TextColor, TextFont, TextLayout, TextSpan, UiRect, Val, With};
-use bevy::text::Justify;
+use bevy::text::{FontWeight, Justify};
 use bevy::ui::percent;
 use server_lib::{Data, DataType, DataTypeKind, RPSType};
 use std::sync::Arc;
@@ -55,7 +55,7 @@ pub(crate) fn off_change(
             button.0 = list.contains(&token.0);
         }
     }else {
-        for (mut button,token) in q_button.iter_mut(){
+        for (mut button,_) in q_button.iter_mut(){
             button.0 = false;
         }
     }
@@ -76,6 +76,7 @@ pub(crate) fn fail_event(
                 TextFont {
                     font: asset_server.load(Font::Bold.get()),
                     font_size: 20.0,
+                    weight: FontWeight::BOLD,
                     ..default()
                 },
                 TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
@@ -136,6 +137,7 @@ pub(crate) fn name_event(
             let base_font = TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 20.0,
+                weight: FontWeight::BOLD,
                 ..default()
             };
             let (user_list,_) = q_user_list.single().unwrap();
@@ -174,6 +176,7 @@ pub(crate) fn name_event(
                                 Text::new("V"),
                                 TextFont {
                                     font: asset_server.load(Font::Bold.get()),
+                                    weight: FontWeight::BOLD,
                                     ..default()
                                 },
                                 TextColor(BLACK.into()),
@@ -254,6 +257,7 @@ pub(crate) fn remove_event(
 
             let base_font = TextFont {
                 font: asset_server.load(Font::Bold.get()),
+                weight: FontWeight::BOLD,
                 font_size: 20.0,
                 ..default()
             };
@@ -306,6 +310,7 @@ pub(crate) fn message_event(
             let base_font = TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 20.0,
+                weight: FontWeight::BOLD,
                 ..default()
             };
 
@@ -369,6 +374,7 @@ pub(crate) fn rps_event(
                         let base_font = TextFont {
                             font: asset_server.load(Font::Bold.get()),
                             font_size: 20.0,
+                            weight: FontWeight::BOLD,
                             ..default()
                         };
 
@@ -428,6 +434,7 @@ pub(crate) fn rps_event(
                             let base_font = TextFont {
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 20.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             };
 
@@ -510,6 +517,7 @@ pub(crate) fn rps_event(
                             let base_font = TextFont {
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 20.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             };
 

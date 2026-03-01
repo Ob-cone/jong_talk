@@ -6,7 +6,7 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
 use bevy::color::Color;
 use bevy::picking::Pickable;
-use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, Interaction, IntoScheduleConfigs, JustifyContent, Node, On, OnEnter, OnExit, Overflow, Pointer, Query, Res, Single, Text, TextColor, TextFont, Update, Val, With};
+use bevy::prelude::{default, in_state, AlignItems, BackgroundColor, BorderRadius, Button, Changed, Click, Commands, Component, FlexDirection, FontWeight, Interaction, IntoScheduleConfigs, JustifyContent, Node, On, OnEnter, OnExit, Overflow, Pointer, Query, Res, Single, Text, TextColor, TextFont, Update, Val, With};
 use bevy::tasks::IoTaskPool;
 use bevy::text::TextLayoutInfo;
 use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
@@ -104,6 +104,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 TextFont {
                     font: asset_server.load(Font::Bold.get()),
                     font_size: 30.0,
+                    weight: FontWeight::BOLD,
                     ..default()
                 },
                 TextColor(Color::NONE),
@@ -156,6 +157,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 36.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into())

@@ -4,7 +4,7 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, RED, WHITE};
 use bevy::color::palettes::css::{GRAY, WHEAT};
 use bevy::color::Srgba;
-use bevy::prelude::{default, in_state, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, ImageNode, IntoScheduleConfigs, JustifyContent, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Query, Res, ResMut, Resource, Single, States, Text, TextColor, TextFont, UiRect, Update, Val, With, ZIndex};
+use bevy::prelude::{default, in_state, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, FontWeight, ImageNode, IntoScheduleConfigs, JustifyContent, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Query, Res, ResMut, Resource, Single, States, Text, TextColor, TextFont, UiRect, Update, Val, With, ZIndex};
 use bevy::text::TextSpan;
 use rand::random_range;
 use server_lib::{Data, DataType, DataTypeKind, RPSType};
@@ -101,6 +101,7 @@ fn rps_modal(
                         TextFont{
                             font: asset_server.load(Font::Bold.get()),
                             font_size: 32.0,
+                            weight: FontWeight::BOLD,
                             ..default()
                         },
                         TextColor(RED.into())
@@ -123,6 +124,7 @@ fn rps_modal(
                             TextFont{
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 24.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -143,6 +145,7 @@ fn rps_modal(
                             TextFont{
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 24.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -176,6 +179,7 @@ fn rps_modal(
                             TextFont {
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 42.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -185,14 +189,14 @@ fn rps_modal(
                             Text("Yes".to_string()),
                             base_font.clone()
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _trigger: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut next_rps_state: ResMut<NextState<RpsState>>,
-                            mut rpstype: ResMut<RpsModalResource>
+                            mut rps_type: ResMut<RpsModalResource>
                         | {
                             let mut _token = String::new();
-                            if let RpsModalType::Send(token) = rpstype.0.clone(){
+                            if let RpsModalType::Send(token) = rps_type.0.clone(){
                                 _token = token;
                             }
 
@@ -204,7 +208,7 @@ fn rps_modal(
                                 inform: DataType::RPS(RPSType::Send(id,Arc::new(_token)))
                             });
 
-                            *rpstype = RpsModalResource(RpsModalType::None);
+                            *rps_type = RpsModalResource(RpsModalType::None);
                             next_rps_state.set(RpsState::None);
                         });
 
@@ -212,7 +216,7 @@ fn rps_modal(
                             Text("No".to_string()),
                             base_font.clone()
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _trigger: On<Pointer<Click>>,
                             mut next_rps_state: ResMut<NextState<RpsState>>,
                             mut rpstype: ResMut<RpsModalResource>
                         | {
@@ -247,6 +251,7 @@ fn rps_modal(
                         TextFont{
                             font: asset_server.load(Font::Bold.get()),
                             font_size: 32.0,
+                            weight: FontWeight::BOLD,
                             ..default()
                         },
                         TextColor(RED.into())
@@ -287,6 +292,7 @@ fn rps_modal(
                             TextFont{
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 24.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -307,6 +313,7 @@ fn rps_modal(
                             TextFont{
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 24.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -340,6 +347,7 @@ fn rps_modal(
                             TextFont {
                                 font: asset_server.load(Font::Bold.get()),
                                 font_size: 42.0,
+                                weight: FontWeight::BOLD,
                                 ..default()
                             },
                             TextColor(BLACK.into())
@@ -349,7 +357,7 @@ fn rps_modal(
                             Text("Yes".to_string()),
                             base_font.clone()
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _trigger: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut rps_timer: ResMut<RpsTimer>,
@@ -376,7 +384,7 @@ fn rps_modal(
                             Text("No".to_string()),
                             base_font.clone()
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _trigger: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut rps_timer: ResMut<RpsTimer>,
@@ -428,6 +436,7 @@ fn rps_modal(
                         TextFont{
                             font: asset_server.load(Font::Bold.get()),
                             font_size: 32.0,
+                            weight: FontWeight::BOLD,
                             ..default()
                         },
                         TextColor(BLACK.into())
@@ -467,7 +476,7 @@ fn rps_modal(
                             ImageNode::new(asset_server.load("rock.png")),
 
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut rps_timer: ResMut<RpsTimer>,
@@ -508,7 +517,7 @@ fn rps_modal(
                             ImageNode::new(asset_server.load("paper.png")),
 
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut rps_timer: ResMut<RpsTimer>,
@@ -549,7 +558,7 @@ fn rps_modal(
                             ImageNode::new(asset_server.load("scissors.png")),
 
                         )).observe(|
-                            trigger: On<Pointer<Click>>,
+                            _: On<Pointer<Click>>,
                             write_mpsc: Res<WriteMpsc>,
                             base: Res<BasicInfos>,
                             mut rps_timer: ResMut<RpsTimer>,

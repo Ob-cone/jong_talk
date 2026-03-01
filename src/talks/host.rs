@@ -4,7 +4,7 @@ use crate::{despawn_screen, get_ip, BasicInfos, Font, JoinResultReceiver, MainSt
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::css::{BLACK, WHITE};
-use bevy::prelude::{in_state, AlignItems, Button, Click, Commands, Component, FlexDirection, IntoScheduleConfigs, JustifyContent, On, OnEnter, OnExit, Pointer, Query, Res, Text};
+use bevy::prelude::{in_state, AlignItems, Button, Click, Commands, Component, FlexDirection, FontWeight, IntoScheduleConfigs, JustifyContent, On, OnEnter, OnExit, Pointer, Query, Res, Text};
 use bevy::tasks::IoTaskPool;
 use bevy::text::{TextColor, TextFont};
 use bevy::ui::{BackgroundColor, BorderRadius, Node, Overflow, Val};
@@ -86,6 +86,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 36.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into())

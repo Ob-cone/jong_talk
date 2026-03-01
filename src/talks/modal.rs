@@ -4,7 +4,7 @@ use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::WHITE;
 use bevy::color::palettes::css::{BLACK, WHEAT};
 use bevy::color::{Color, Srgba};
-use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, JustifyContent, MessageWriter, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Press, Query, Release, Res, ResMut, States, Text, Val};
+use bevy::prelude::{default, AlignItems, AppExtStates, BackgroundColor, BorderRadius, Button, Click, Commands, Component, FlexDirection, FontWeight, JustifyContent, MessageWriter, NextState, Node, On, OnEnter, OnExit, Out, Over, Pointer, Press, Query, Release, Res, ResMut, States, Text, Val};
 use bevy::text::{TextColor, TextFont};
 use bevy::ui::{UiRect, ZIndex};
 
@@ -79,6 +79,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                 TextFont {
                     font: asset_server.load(Font::Bold.get()),
                     font_size: 42.0,
+                    weight: FontWeight::BOLD,
                     ..default()
                 },
                 TextColor(BLACK.into())
@@ -90,6 +91,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
                         font_size: 24.0,
+                        weight: FontWeight::BOLD,
                         ..default()
                     },
                     TextColor(BLACK.into())
@@ -100,6 +102,7 @@ fn modal(mut commands: Commands, asset_server: Res<AssetServer>, server: Res<Ser
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
                         font_size: 24.0,
+                        weight: FontWeight::BOLD,
                         ..default()
                     },
                     TextColor(Color::NONE),

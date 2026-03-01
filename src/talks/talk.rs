@@ -10,7 +10,7 @@ use bevy::color::palettes::css::{BLACK, WHITE};
 use bevy::color::palettes::tailwind::BLUE_200;
 use bevy::input::ButtonInput;
 use bevy::prelude::*;
-use bevy::prelude::{in_state, BorderRadius, Button, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Single, SpawnRelated, State, Text, Transform, With};
+use bevy::prelude::{in_state, BorderRadius, Button, Click, Commands, DetectChanges, Display, FlexDirection, InheritedVisibility, IntoScheduleConfigs, Justify, KeyCode, LineBreak, Name, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Query, Res, ResMut, Single, State, Text, Transform, With};
 use bevy::text::{TextColor, TextFont, TextLayout};
 use bevy::ui::{AlignItems, BackgroundColor, ComputedNode, JustifyContent, Node, UiRect, Val};
 use bevy::utils::default;
@@ -115,6 +115,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     Text::new(basic_infos.name.clone()),
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
+                        weight: FontWeight::BOLD,
                         ..default()
                     },
                     TextColor(BLACK.into())
@@ -138,6 +139,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>,basic_infos: Res
                     Text::new("RPS"),
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
+                        weight: FontWeight::BOLD,
                         ..default()
                     },
                     TextColor(BLACK.into())

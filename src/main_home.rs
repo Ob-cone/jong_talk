@@ -1,14 +1,14 @@
+use crate::info::InfoState;
 use crate::talks::rps_game::{RpsList, RpsModalResource, RpsModalType, RpsTimer};
 use crate::{despawn_screen, Font, LastState, MainState, ResUserList, ServerResource};
 use bevy::app::{App, AppExit};
 use bevy::color::palettes::css::{BLACK, WHITE};
 use bevy::ecs::relationship::RelatedSpawnerCommands;
 use bevy::picking::Pickable;
-use bevy::prelude::{AssetServer, Button, ChildOf, Click, Commands, Component, FlexDirection, Interaction, MessageWriter, NextState, On, OnEnter, OnExit, Out, Over, Pointer, PositionType, Query, Res, ResMut, Text, UiRect};
+use bevy::prelude::{AssetServer, Button, ChildOf, Click, Commands, Component, FlexDirection, FontWeight, MessageWriter, NextState, On, OnEnter, OnExit, Out, Over, Pointer, PositionType, Query, Res, ResMut, Text, UiRect};
 use bevy::text::{LineHeight, TextColor, TextFont, Underline};
-use bevy::ui::{AlignItems, BackgroundColor, BorderRadius, JustifyContent, Node, Val, ZIndex};
+use bevy::ui::{AlignItems, BackgroundColor, BorderRadius, JustifyContent, Node, Val};
 use bevy::utils::default;
-use crate::info::InfoState;
 
 pub fn main_plugin(app: &mut App){
     app.add_systems(OnEnter(MainState::MainHome), main_setup)
@@ -55,6 +55,7 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 70.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into()),
@@ -65,6 +66,7 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 42.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into())
@@ -77,6 +79,7 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 42.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into())
@@ -89,6 +92,7 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 42.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into())
@@ -101,6 +105,7 @@ fn main_setup(mut commands: Commands,asset_server: Res<AssetServer>){
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 42.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             TextColor(BLACK.into()),
@@ -175,6 +180,7 @@ pub fn get_main_home_back_button(parent: &mut RelatedSpawnerCommands<ChildOf>,as
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 70.0,
+                weight: FontWeight::BOLD,
                 ..default()
             },
             LineHeight::Px(55.0),

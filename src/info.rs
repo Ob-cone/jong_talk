@@ -4,7 +4,7 @@ use bevy::app::App;
 use bevy::asset::AssetServer;
 use bevy::color::palettes::css::{BLACK, WHITE};
 use bevy::color::Color;
-use bevy::prelude::{AlignItems, AlignSelf, Click, Commands, Component, FlexDirection, JustifyContent, LinearGradient, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Res, ResMut, States, Text, UiRect, Val};
+use bevy::prelude::{AlignItems, AlignSelf, Click, Commands, Component, FlexDirection, FontWeight, JustifyContent, LinearGradient, NextState, On, OnEnter, OnExit, Overflow, Pointer, PositionType, Res, ResMut, States, Text, UiRect, Val};
 use bevy::text::{TextColor, TextFont};
 use bevy::ui::{BackgroundColor, BackgroundGradient, Node};
 use bevy::utils::default;
@@ -98,6 +98,7 @@ fn setup(
             TextFont {
                 font: asset_server.load(Font::Bold.get()),
                 font_size: 35.0,
+                weight: FontWeight::BOLD,
                 ..default()
             }
         )).observe(|_:On<Pointer<Click>>| {
@@ -134,6 +135,7 @@ fn setup(
                     TextFont {
                         font: asset_server.load(Font::Bold.get()),
                         font_size: 30.0,
+                        weight: FontWeight::BOLD,
                         ..default()
                     },
                     TextColor(WHITE.into())
