@@ -605,7 +605,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_bc_ime_text_field"
-version = "0.0.5"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8f2974d4f7421469b42caa01bc1d330f18666a99a8a486af4f114dc8278fb9c"
 dependencies = [
  "arboard",
  "bevy",

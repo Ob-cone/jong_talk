@@ -193,7 +193,8 @@ pub(crate) fn name_event(
                                 state: Res<EventButtonState>,
                                 write_mpsc: Res<WriteMpsc>,
                                 mut next_rps_state: ResMut<NextState<RpsState>>,
-                                mut rps_type: ResMut<RpsModalResource>
+                                mut rps_type: ResMut<RpsModalResource>,
+                                mut res_off_list: ResMut<OffList>
                             | {
                                 if let Ok(button_info) = q_button_info.get(trigger.entity) {
                                     if !button_info.0 {
@@ -214,6 +215,13 @@ pub(crate) fn name_event(
                                                 type_kind: DataTypeKind::IsOff,
                                                 inform: DataType::IsOff(Arc::new(token.0.clone()))
                                             });
+                                            println!("Off1: {:?}",res_off_list.0);
+                                            if let Some(list) =res_off_list.0.get_mut(&base.token){
+                                                if let Some(i) = list.iter().position(|x| x == &token.0) {
+                                                    list.remove(i);
+                                                }
+                                            }
+                                            println!("Off2: {:?}",res_off_list.0);
                                         }
                                     }
                                 }
@@ -483,6 +491,7 @@ pub(crate) fn rps_event(
                         }
                     }
                     RPSType::Result(id,choice,win) => {
+
                         println!("Id: {:?}, Choice:{:?},Win: {:?}",id,choice,win);
                         if let Some((send_token,accept_token)) = res_rps_list.0.get(&id){
                             let send_name = format!("{}",&res_user_list.0[send_token]);
@@ -582,6 +591,9 @@ pub(crate) fn rps_event(
                             });
 
                         }
+                        println!("Rps1: {:?}",res_rps_list.0);
+                        res_rps_list.0.remove(&id);
+                        println!("Rps2: {:?}",res_rps_list.0);
                     }
                     _ => {}
                 }

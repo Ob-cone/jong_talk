@@ -9,7 +9,6 @@ use bevy_bc_ime_text_field::text_field::{TextField, TextFieldInfo};
 use bevy_bc_ime_text_field::text_field_style::TextFieldStyle;
 use std::fs::OpenOptions;
 use std::io::{Read, Seek, SeekFrom, Write};
-use bevy::ecs::event::Trigger;
 use toml::{Table, Value};
 
 pub fn setting_plugin(app: &mut App){
