@@ -13,7 +13,7 @@ use crate::talks::host::host_plugin;
 use crate::talks::join::join_plugin;
 use crate::talks::rps_game::{rps_plugin, RpsList, RpsModalResource, RpsModalType, RpsTimer};
 use crate::talks::talk::talk_plugin;
-use crate::talks::talk_struct::{EventButtonState, EventState, OffList};
+use crate::talks::talk_struct::{EventButtonState, EventState, OffList, PingPong};
 use crate::talks::talk_update_data::InputDataEvent;
 use bevy::color::palettes::css::GRAY;
 use bevy::prelude::{Click, Local, MessageReader, On, Or, Pointer, Res, State};
@@ -92,6 +92,7 @@ async fn main() {
         .insert_resource(RpsModalResource(RpsModalType::None))
         .insert_resource(RpsList(HashMap::<Vec<u8>,(String,String)>::new()))
         .insert_resource(OffList(HashMap::<String,Vec<String>>::new()))
+        .insert_resource(PingPong(None))
         .add_message::<InputDataEvent>()
         .add_systems(Startup,setup)
         .add_plugins(ImeTextFieldPlugin)

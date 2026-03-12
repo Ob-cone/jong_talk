@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use crate::talks::rps_game::{choice_to_string, RpsList, RpsModalResource, RpsModalType, RpsState};
-use crate::talks::talk_struct::{Chat, EventButtonState, EventState, OffList, Token, UserList};
+use crate::talks::talk_struct::{Chat, EventButtonState, EventState, OffList, PingPong, Token, UserList};
 use crate::{BasicInfos, ButtonInfo, FailConnectMpsc, Font, IsSendText, ResUserList, TalkMpsc, WriteMpsc};
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
@@ -11,6 +11,7 @@ use bevy::text::{FontWeight, Justify};
 use bevy::ui::percent;
 use server_lib::{Data, DataType, DataTypeKind, RPSType};
 use std::sync::Arc;
+use std::time::Instant;
 use system_shutdown::shutdown;
 
 #[derive(Event,Message)]
@@ -66,9 +67,21 @@ pub(crate) fn fail_event(
     mut fail_mpsc: ResMut<FailConnectMpsc>,
     q_chat: Query<Entity,With<Chat>>,
     asset_server: Res<AssetServer>,
+    mut ping_pong: ResMut<PingPong>,
 ){
     while let Ok(is_fail_connect) = fail_mpsc.1.try_recv(){
         if is_fail_connect{
+            if ping_pong.0.is_none(){
+                ping_pong.0 = Some(Instant::now());
+            }
+        }
+    }
+    if let Some(timer) = ping_pong.0{
+        let dur = Instant::now().duration_since(timer);
+        //println!("Ping: {:?}",dur);
+        if dur.as_secs() >= 5{
+            println!("Fail! {:?}",dur);
+            ping_pong.0 = None;
             let chat = q_chat.single().unwrap();
             let mut chat = commands.get_entity(chat).unwrap();
             chat.with_child((
@@ -82,6 +95,17 @@ pub(crate) fn fail_event(
                 TextLayout::new(Justify::Center,LineBreak::WordOrCharacter),
                 TextColor(RED_500.into())
             ));
+        }
+    }
+}
+
+pub(crate) fn pong_event(
+    mut event: MessageReader<InputDataEvent>,
+    mut ping_pong: ResMut<PingPong>,
+){
+    for event in event.read() {
+        if event.0.type_kind == DataTypeKind::Pong{
+            ping_pong.0 = None;
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::scroll::ScrollComponent;
 use crate::talks::modal::ModalState;
 use crate::talks::rps_game::RpsList;
 use crate::talks::talk_struct::{Chat, ChatField, ChatParent, EventButtonState, EventState, EventStateChangeButton, MainNode, OffList, OnTalkState, RightNode, TextNode, UserList};
-use crate::talks::talk_update_data::{fail_event, game_data_event, message_event, name_event, off_change, off_event, remove_event, rps_change, rps_event, update_data};
+use crate::talks::talk_update_data::{fail_event, game_data_event, message_event, name_event, off_change, off_event, pong_event, remove_event, rps_change, rps_event, update_data};
 use crate::{despawn_screen, BasicInfos, FailConnectMpsc, Font, JoinResultReceiver, MainState, RuntimeResource, ServerOffBroadcast, ServerResource, TalkMpsc, TalkState, WriteMpsc};
 use bevy::app::{App, Update};
 use bevy::asset::AssetServer;
@@ -33,6 +33,7 @@ pub fn talk_plugin(app: &mut App){
         .add_systems(Update,rps_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,off_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,game_data_event.run_if(in_state(TalkState::Display)))
+        .add_systems(Update,pong_event.run_if(in_state(TalkState::Display)))
         .add_systems(Update,rps_change.run_if(
             in_state(TalkState::Display)
                 .and(resource_equals(EventButtonState(EventState::RPS)))
@@ -289,6 +290,7 @@ fn get_data(
     write_mpsc: Res<WriteMpsc>,
     server_off: Res<ServerOffBroadcast>,
     fail_mpsc: Res<FailConnectMpsc>,
+    
 ) {
     let infos = basic_infos.clone();
     let addr = server.addr.clone();
@@ -298,7 +300,7 @@ fn get_data(
         let mut rx = write_mpsc.0.subscribe();
         let mut server_rx = server_off.0.subscribe();
         tokio_spawn(rt,async move{
-            if let Ok(stream) = server_lib::join_server(infos.token, infos.name, addr).await {
+            if let Ok(stream) = server_lib::join_server(infos.token.clone(), infos.name, addr).await {
                 let (mut r_stream, mut w_stream) = stream.into_split();
                 let r_tokio = tokio::spawn(async move{
                     loop {
@@ -309,7 +311,13 @@ fn get_data(
                         }else {
                             println!("Read Error(Client): {:?}",data);
                             let _ = f_tx.send(true).await;
-                            println!("Fail Connect!");
+                            
+                            let _ = tx.send(Data{
+                                token : Some(Arc::new(infos.token)),
+                                type_kind: DataTypeKind::Ping,
+                                inform: DataType::Ping,
+                            });
+                            
                             break;
                         }
                     }

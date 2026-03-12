@@ -110,6 +110,8 @@ pub enum DataTypeKind {
     Token = 001,
     Name = 002,
     Remove = 003,
+    Ping = 004,
+    Pong = 005,
     Message = 101,
     Image = 102,
     RPS = 103, // 가위 바위 보
@@ -124,6 +126,8 @@ impl DataTypeKind {
             001 => Some(Self::Token),
             002 => Some(Self::Name),
             003 => Some(Self::Remove),
+            004 => Some(Self::Ping),
+            005 => Some(Self::Pong),
             101 => Some(Self::Message),
             102 => Some(Self::Image),
             103 => Some(Self::RPS),
@@ -140,6 +144,8 @@ pub enum DataType {
     Token(CopyStr),
     Name(CopyStr),
     Remove,
+    Ping,
+    Pong,
     Message(CopyStr),
     Image,
     RPS(RPSType),
@@ -162,6 +168,8 @@ impl DataType {
                 DataType::Name(Arc::new(name_string))
             }
             DataTypeKind::Remove => DataType::Remove,
+            DataTypeKind::Ping => DataType::Ping,
+            DataTypeKind::Pong => DataType::Pong,
             DataTypeKind::Message => {
                 let msg = String::from_utf8_lossy(&bytes);
                 let msg_string = msg.trim().to_string();
@@ -523,6 +531,14 @@ async fn process_socket(
                                 }
                             }
                         }
+                    }
+                    if data.type_kind == DataTypeKind::Ping{
+                        println!("Pong!");
+                        let _ = tx_w.send(Data {
+                            token: None,
+                            type_kind: DataTypeKind::Pong,
+                            inform: DataType::Pong
+                        });
                     }
                     if data.type_kind == DataTypeKind::RPS{
                     if let DataType::RPS(rps) = data.inform{

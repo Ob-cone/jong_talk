@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Instant;
 use bevy::prelude::{Component, Resource};
 
 #[derive(Component)]
@@ -35,6 +36,8 @@ pub struct EventButtonState(pub EventState);
 pub struct EventStateChangeButton;
 #[derive(Resource,Debug)]
 pub struct OffList(pub HashMap<String,Vec<String>>);
+#[derive(Resource,Debug)]
+pub struct PingPong(pub Option<Instant>);
 
 #[derive(Debug)]
 #[derive(PartialEq)]
