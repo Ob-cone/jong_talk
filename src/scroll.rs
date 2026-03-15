@@ -1,5 +1,6 @@
 use bevy::app::Update;
-use bevy::prelude::{Added, App, ChildOf, Commands, Component, ComputedNode, Entity, Node, On, Pointer, Query, Val};
+use bevy::prelude::{Added, App, ChildOf, Commands, Component, ComputedNode, Entity, Node, On, Pointer, Query, Val, With};
+use bevy::window::{PrimaryWindow, Window};
 
 #[derive(Component)]
 pub enum ScrollComponent {
@@ -20,8 +21,12 @@ fn add_observe(
             trigger: On<Pointer<bevy::prelude::Scroll>>,
             mut q_node: Query<(&mut Node, &ComputedNode)>,
             q_parent: Query<&ChildOf>,
-            q_scroll: Query<&ScrollComponent>, // 추가
+            q_scroll: Query<&ScrollComponent>,
+            q_window: Query<&Window,With<PrimaryWindow>>
         |{
+            let scale = if let Ok(window) = q_window.single(){
+                window.scale_factor()
+            }else { 1.0 };
             let scroll_type = q_scroll.get(trigger.entity).unwrap();
 
             let parent = q_parent.get(trigger.entity).unwrap();
@@ -36,7 +41,7 @@ fn add_observe(
                     ScrollComponent::Top => {
                         if let Val::Px(num) = node.top {
                             let mut height = com_node.size.y - parent_height;
-                            height = height.max(0.0) / 2.0;
+                            height = height.max(0.0) / scale;
                             let mut val = num + trigger.y * 25.0;
                             val = val.clamp(-height, 0.0);
                             node.top = Val::Px(val);
@@ -45,7 +50,7 @@ fn add_observe(
                     ScrollComponent::Bottom => {
                         if let Val::Px(num) = node.bottom{
                             let mut height = parent_height - com_node.size.y;
-                            height = height.min(0.0)/2.0;
+                            height = height.min(0.0)/scale;
                             let mut val = num-trigger.y*25.0;
                             val = val.clamp(height,0.0);
                             node.bottom = Val::Px(val);

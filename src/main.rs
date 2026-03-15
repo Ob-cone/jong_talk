@@ -1,4 +1,4 @@
-//#![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 mod main_home;
 mod talks;
 mod setting;
@@ -16,7 +16,8 @@ use crate::talks::talk::talk_plugin;
 use crate::talks::talk_struct::{EventButtonState, EventState, OffList, PingPong};
 use crate::talks::talk_update_data::InputDataEvent;
 use bevy::color::palettes::css::GRAY;
-use bevy::prelude::{Click, Local, MessageReader, On, Or, Pointer, Res, State};
+use bevy::prelude::{Click, Local, MessageReader, NonSend, On, Or, Pointer, Res, State};
+use bevy::winit::{WinitWindows, WINIT_WINDOWS};
 use bevy::{
     app::{App, AppExit, Last, Startup, Update},
     color::palettes::basic::{BLACK, WHITE},
@@ -58,6 +59,7 @@ use talks::modal::{modal_plugin, ModalState};
 use tokio::runtime::Runtime;
 use tokio::sync::{broadcast, mpsc};
 use toml::{Table, Value};
+use winit::window::Icon;
 
 #[tokio::main]
 async fn main() {
@@ -95,6 +97,7 @@ async fn main() {
         .insert_resource(PingPong(None))
         .add_message::<InputDataEvent>()
         .add_systems(Startup,setup)
+        .add_systems(Startup, set_window_icon)
         .add_plugins(ImeTextFieldPlugin)
         .add_plugins(scroll_plugin)
         .add_plugins((
@@ -123,6 +126,25 @@ fn exit_program(mut exit_events: MessageReader<AppExit>,mut rt: ResMut<RuntimeRe
         }
         println!("Exit Program");
     }
+}
+
+fn set_window_icon(_windows: Option<NonSend<WinitWindows>>) {
+
+    WINIT_WINDOWS.with_borrow_mut(|window|{
+
+        let image = image::open("assets/jongtalk_icon.png")
+            .expect("아이콘 파일 없음")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+
+        let icon = Icon::from_rgba(rgba, width, height).unwrap();
+
+        if window.windows.is_empty(){return;}
+        for window in window.windows.values(){
+            window.set_window_icon(Some(icon.clone()));
+        }
+    })
 }
 
 fn setup(mut commands: Commands,mut res: ResMut<BasicInfos>){
@@ -307,7 +329,7 @@ fn button_system(
     }
 }
 
-fn click_textfield(trigger: On<Pointer<Click>>, mut child: Query<&Children>, mut field: Query<&mut TextFieldInfo>){
+fn click_text_field(trigger: On<Pointer<Click>>, mut child: Query<&Children>, mut field: Query<&mut TextFieldInfo>){
     if let Ok(children) = child.get_mut(trigger.entity){
         if let Ok(mut field) = field.get_mut(children[0]){
             field.focus = true;

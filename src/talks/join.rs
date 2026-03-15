@@ -1,6 +1,6 @@
 use crate::main_home::get_main_home_back_button;
 use crate::talks::talk::join_after;
-use crate::{click_textfield, despawn_screen, BasicInfos, Font, JoinResultReceiver, MainState, RuntimeResource, ServerResource};
+use crate::{click_text_field, despawn_screen, BasicInfos, Font, JoinResultReceiver, MainState, RuntimeResource, ServerResource};
 use bevy::app::App;
 use bevy::asset::AssetServer;
 use bevy::color::palettes::basic::{BLACK, WHITE};
@@ -77,7 +77,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>){
                 color: BLACK.into(),
                 ..default()
             }
-        )).observe(click_textfield);
+        )).observe(click_text_field);
 
         parent.spawn(
             Node {
