@@ -1,6 +1,6 @@
 [package]
 name = "jong_talk"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2024"
 
 [profile.dev]
@@ -8,11 +8,13 @@ opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-Ctarget-feature=+crt-static"]
 
 [target.'cfg(windows)']
 rustflags = ["-C", "link-args=/SUBSYSTEM:WINDOWS"]
+
 [dependencies]
 bevy = { version = "0.18.0"}
 server_lib = {path = "server_lib"}

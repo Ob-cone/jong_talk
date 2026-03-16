@@ -478,7 +478,13 @@ async fn process_socket(
         loop {
             match Data::read_data(&mut r_stream).await {
                 Ok(data) => {
-                    let _ = tx_r.send(data);
+                    if let Some(ref t) = data.token{
+                        if t.as_str() != _token.as_str(){
+                            println!("false");
+                            continue
+                        }
+                        let _ = tx_r.send(data);
+                    }
                 }
                 Err(_) => {
                     //println!("Server Err: {:?}",e);
